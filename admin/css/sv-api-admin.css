@@ -1,0 +1,82 @@
+/**
+ * All of the CSS for your admin-specific functionality should be
+ * included in this file.
+ */
+
+.run_import_status,
+.run_import_event_status {
+  color: #4AF626;
+  background-color: #23282d;
+  border-radius: 10px;
+}
+
+.run_import_status.content,
+.run_import_event_status.content {
+  height: 500px;
+  padding: 1rem;
+  overflow: auto;
+}
+
+.disable-button {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.alert-text {
+  color: #dc3232;
+  font-size: 14px;
+  font-weight: 400;
+}
+.success-text {
+  color: #46b450;
+  font-size: 14px;
+  font-weight: 400;
+}
+input.my-radio {
+  margin: 0;
+}
+
+#create_new_listing_prompt {
+  position: fixed;
+  width: calc(100vw - 160px);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  top: 0px;
+  left: 160px;
+  background: rgba(225, 225, 225, .4);
+}
+#create_new_listing_prompt.hidden {
+  display: none !important;
+}
+
+#create_new_listing_prompt_box {
+  border: 2px solid black;
+  background: white;
+  max-width: 550px;
+  border-radius: 10px;
+  padding: 100px;
+}
+.hidden {
+  display: none;
+}
+
+.logWrapper {
+  min-height: 200px;
+  max-height: 400px;
+  background: black;
+  border-radius: 25px;
+  padding: 25px;
+  overflow: scroll;
+  color: lime;
+}
+.logWrapper h3 {
+  color: lime;
+}
+.selectLog p {
+  display: inline;
+  margin-left: 20px;
+  top: 2px;
+  position: relative;
+}
