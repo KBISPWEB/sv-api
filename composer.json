@@ -8,6 +8,7 @@
             "email": "dan@bellweather.agency"
         }
     ],
+    "license": "MIT",
     "require": {
         "php": ">=7.4"
     }
