@@ -1,7 +1,5 @@
 <?php
 
-namespace SV\API_Public;
-
 /**
  * The public-facing functionality of the plugin.
  *
