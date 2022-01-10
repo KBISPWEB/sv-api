@@ -1,5 +1,7 @@
 <?php
 
+namespace SV\API;
+
 /**
  * The file that defines the core plugin class
  *

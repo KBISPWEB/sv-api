@@ -73,10 +73,13 @@ require plugin_dir_path( __FILE__ ) . 'includes/class-sv-api.php';
  *
  * @since    1.0.0
  */
-function run_sv_api() {
+function run_sv_api() {	
 
 	$plugin = new SV_Api();
 	$plugin->run();
 
 }
+
+use SV\API;
+
 run_sv_api();
