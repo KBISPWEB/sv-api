@@ -1,7 +1,6 @@
 {
     "name": "bellweather/sv-api",
     "description": "Package to migrate content from SimpleView API to WordPress Custom Post Types.",
-    "type": "composer-plugin",
     "authors": [
         {
             "name": "Dan Howard",
