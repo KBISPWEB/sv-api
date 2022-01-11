@@ -170,6 +170,7 @@ class SV_Api {
 
         // $this->loader->add_action( 'init', $plugin_admin, 'custom_post_types' );
         $this->loader->add_action( 'init', $plugin_admin, 'add_acf_fields' );
+        $this->loader->add_action( 'init', $plugin_admin, 'add_cpts' );
 
         $this->loader->add_action( 'wp_ajax_run_import', $plugin_admin, 'run_bulk_listings' );
         $this->loader->add_action( 'wp_ajax_run_events_import', $plugin_admin, 'run_bulk_events' );

@@ -148,6 +148,44 @@ class SV_Api_Admin {
 	}
 
 	/**
+	 * Adds Custom Post Types
+	 * TODO: Allow some user control over what post types are created
+	 * @since  1.0.0
+	 */
+	public function add_cpts() {
+		register_post_type(
+			'listings',
+			array(
+			  	'labels' => array(
+					'name'                       => _x( 'Listings', 'taxonomy general name', 'textdomain' ),
+					'singular_name'              => _x( 'Listing', 'taxonomy singular name', 'textdomain' ),
+					'search_items'               => __( 'Search Listings', 'textdomain' ),
+					'popular_items'              => __( 'Popular Listings', 'textdomain' ),
+					'all_items'                  => __( 'All Listings', 'textdomain' ),
+					'parent_item'                => null,
+					'parent_item_colon'          => null,
+					'edit_item'                  => __( 'Edit Listings', 'textdomain' ),
+					'update_item'                => __( 'Update Listings', 'textdomain' ),
+					'add_new_item'               => __( 'Add New Listings', 'textdomain' ),
+					'new_item_name'              => __( 'New Listings Name', 'textdomain' ),
+					'separate_items_with_commas' => __( 'Separate Listings with commas', 'textdomain' ),
+					'add_or_remove_items'        => __( 'Add or remove Listings', 'textdomain' ),
+					'choose_from_most_used'      => __( 'Choose from the most used Listings', 'textdomain' ),
+					'not_found'                  => __( 'No Listings found.', 'textdomain' ),
+					'menu_name'                  => __( 'Listings', 'textdomain' ),
+			  	),
+				'public' => true,
+				'has_archive' => true,
+				'hierarchical' => true,
+				'taxonomies' => array('post_tag', 'category'),
+				'menu_icon' => 'dashicons-admin-site-alt3',
+				'supports' => array('revisions','editor','title','excerpt','thumbnail'),
+				'rewrite' => array( 'slug' => 'listings', 'with_front'=> true )
+			)
+		);
+	}
+
+	/**
 	 * Adds ACF fields for Listings
 	 *
 	 * @since  1.0.0
