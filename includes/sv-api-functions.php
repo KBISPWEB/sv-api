@@ -197,6 +197,7 @@ function update_standard_fields($pid, $standard_fields) {
   update_field('company', $standard_fields['company'], $pid);
   update_field('contact', $standard_fields['contact'], $pid);
   update_field('email', $standard_fields['email'], $pid);
+  update_field('hours', $standard_fields['hours'], $pid);
   update_field('facebook', $standard_fields['facebook'], $pid);
   update_field('fax', $standard_fields['fax'], $pid);
   update_field('instagram', $standard_fields['instagram'], $pid);
@@ -329,7 +330,7 @@ function process_membership_info($type) {
 }
 
 function get_amenities_info() {
-  $amenities_info_response = sv_api_connection('getListingAmenities', 1);
+  $amenities_info_response = baltimore_crm_api_connection('getListingAmenities', 1);
   $amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
   foreach ($amenities_info as $info) {
     $tab_id     = $info["AMENITYTABID"];
@@ -398,19 +399,19 @@ function process_amenities($amenities_response, $tag_to_tab) {
 function grab_fields($listing){
 
   // Address //
-  $address                = '';
-  $address                .= !empty( $listing['ADDR1'] ) ? $listing['ADDR1'] : '';
-  $address                .= !empty( $listing['ADDR2'] ) ? "\n" . $listing['ADDR2'] : '';
-  $address                .= !empty( $listing['ADDR3'] ) ? "\n" . $listing['ADDR3'] : '';
-  $city                   = !empty( $listing['CITY'] ) ? $listing['CITY'] : '';
-  $state                  = !empty( $listing['STATE'] ) ? $listing['STATE'] : '';
-  $zip                    = !empty( $listing['ZIP'] ) ? ' ' . $listing['ZIP'] : '';
-  if( $city != '' && $state != ''):
-    $city_state = $city . ', ' . $state;
-  else:
-    $city_state = $city . $state;
-  endif;
-  $address                .= "\n" . $city_state . $zip;
+    $address                = '';
+    $address                .= !empty( $listing['ADDR1'] ) ? $listing['ADDR1'] : '';
+    $address                .= !empty( $listing['ADDR2'] ) ? "\n" . $listing['ADDR2'] : '';
+    $address                .= !empty( $listing['ADDR3'] ) ? "\n" . $listing['ADDR3'] : '';
+    $city                   = !empty( $listing['CITY'] ) ? $listing['CITY'] : '';
+    $state                  = !empty( $listing['STATE'] ) ? $listing['STATE'] : '';
+    $zip                    = !empty( $listing['ZIP'] ) ? ' ' . $listing['ZIP'] : '';
+    if( $city != '' && $state != ''):
+      $city_state = $city . ', ' . $state;
+    else:
+      $city_state = $city . $state;
+    endif;
+    $address                .= "\n" . $city_state . $zip;
 
   $map_coordinates        = '';
   if( !empty( $listing['LATITUDE']) && !empty( $listing['LONGITUDE'] ) ):
@@ -419,64 +420,62 @@ function grab_fields($listing){
 
   // General //
 
-  $company                = !empty( $listing['COMPANY'] ) ? $listing['COMPANY'] : false;
-  $phone                  = !empty( $listing['PHONE'] ) ? $listing['PHONE'] : '';
-  $alternate              = !empty( $listing['ALTPHONE'] ) ? $listing['ALTPHONE'] : '';
-  $tollfree               = !empty( $listing['TOLLFREE'] ) ? $listing['TOLLFREE'] : '';
-  $fax                    = !empty( $listing['FAX'] ) ? $listing['FAX'] : '';
-  $sort_company           = !empty( $listing['SORTCOMPANY'] ) ? $listing['SORTCOMPANY'] : $listing_id . ' Company Name Missing';
-  $contact                = !empty( $listing['PRIMARYCONTACTFULLNAME'] ) ? $listing['PRIMARYCONTACTFULLNAME'] : '';
-  $email                  = !empty( $listing['EMAIL'] ) ? $listing['EMAIL'] : '';
-  $rank                   = !empty( $listing['RANKNAME'] ) ? $listing['RANKNAME'] : '';
-  $region                 = !empty( $listing['REGION'] ) ? $listing['REGION'] : '';
+    $company                = !empty( $listing['COMPANY'] ) ? $listing['COMPANY'] : false;
+    $phone                  = !empty( $listing['PHONE'] ) ? $listing['PHONE'] : '';
+    $alternate              = !empty( $listing['ALTPHONE'] ) ? $listing['ALTPHONE'] : '';
+    $tollfree               = !empty( $listing['TOLLFREE'] ) ? $listing['TOLLFREE'] : '';
+    $fax                    = !empty( $listing['FAX'] ) ? $listing['FAX'] : '';
+    $sort_company           = !empty( $listing['SORTCOMPANY'] ) ? $listing['SORTCOMPANY'] : $listing_id . ' Company Name Missing';
+    $contact                = !empty( $listing['PRIMARYCONTACTFULLNAME'] ) ? $listing['PRIMARYCONTACTFULLNAME'] : '';
+    $email                  = !empty( $listing['EMAIL'] ) ? $listing['EMAIL'] : '';
+    
+    $hours                  = ( !empty($listing['HOURS']) ? $listing['HOURS'] : !empty($listing['Hours']) ) ? $listing['Hours'] : '';
+    $hours                  =  str_replace([" Monday", " Tuesday", " Wednesday", " Thursday", " Friday", " Saturday", " Sunday"], ["\nMonday", "\nTuesday", "\nWednesday", "\nThursday", "\nFriday", "\nSaturday", "\nSunday"], $hours);
+    $hours                  =  str_replace(["Monday\t", "Tuesday\t", "Wednesday\t", "Thursday\t", "Friday\t", "Saturday\t", "Sunday\t"], ["Monday: ", "Tuesday: ", "Wednesday: ", "Thursday: ", "Friday: ", "Saturday: ", "Sunday: "], $hours);
 
-  // TODO: is this LISTINGKEYWORDS or LISTING_KEYWORDS
-  $search_keywords        = !empty( $listing['LISTINGKEYWORDS'] ) ? $listing['LISTINGKEYWORDS'] : '';
+    $rank                   = !empty( $listing['RANKNAME'] ) ? $listing['RANKNAME'] : '';
+    $region                 = !empty( $listing['REGION'] ) ? $listing['REGION'] : '';
+    $search_keywords        = !empty( $listing['LISTING_KEYWORDS'] ) ? $listing['LISTING_KEYWORDS'] : '';
+    $ticket_link            = !empty( $listing['TICKETSLINK'] ) ? $listing['TICKETSLINK'] : '';
+    $type_of_member         = !empty( $listing['TYPEOFMEMBER'] ) ? $listing['TYPEOFMEMBER'] : '';
+    $wct_id                 = !empty( $listing['WCTID'] ) ? $listing['WCTID'] : '';
+    $website                = !empty( $listing['WEBURL'] ) ? $listing['WEBURL'] : '';
+    $description            = !empty( $listing['DESCRIPTION'] ) ? $listing['DESCRIPTION'] : '';
 
-  
-  $website                = !empty( $listing['WEBURL'] ) ? $listing['WEBURL'] : '';
-  $description            = !empty( $listing['DESCRIPTION'] ) ? $listing['DESCRIPTION'] : '';
+    $twitter                = '';
+    $facebook               = '';
+    $instagram              = '';
+    $youtube                = '';
 
-  $twitter                = '';
-  $facebook               = '';
-  $instagram              = '';
-  $youtube                = '';
-
-  $social_media = !empty( $listing['SOCIALMEDIA']['ITEM'] ) ? $listing['SOCIALMEDIA']['ITEM'] : '';
-  // Handle social media URLS.
-  // SV API Arrays differ if there is only 1 SOCIALMEDIA ITEM
-  if( isset( $social_media[0] ) ):
-    if( is_array( $social_media[0] ) ):
-      foreach ($social_media as $network):
-        $network_service = strtolower( $network['SERVICE'] );
-        $$network_service = !empty( $network['VALUE'] ) ? $network['VALUE'] : '';
-      endforeach;
-    // Only 1 item
-    else:
-      $network_service = strtolower( $social_media['SERVICE'] );
-      $$network_service = !empty( $social_media['VALUE'] ) ? $social_media['VALUE'] : '';
+    $social_media = !empty( $listing['SOCIALMEDIA']['ITEM'] ) ? $listing['SOCIALMEDIA']['ITEM'] : '';
+    // Handle social media URLS.
+    // SV API Arrays differ if there is only 1 SOCIALMEDIA ITEM
+    if( isset( $social_media[0] ) ):
+      if( is_array( $social_media[0] ) ):
+        foreach ($social_media as $network):
+          $network_service = strtolower( $network['SERVICE'] );
+          $$network_service = !empty( $network['VALUE'] ) ? $network['VALUE'] : '';
+        endforeach;
+      // Only 1 item
+      else:
+        $network_service = strtolower( $social_media['SERVICE'] );
+        $$network_service = !empty( $social_media['VALUE'] ) ? $social_media['VALUE'] : '';
+      endif;
     endif;
-  endif;
 
   // Categories TODO: Maybe Handle Seperately
-  $post_cats              = array();
-  $cat_name               = !empty( $listing['CATNAME'] ) ? $listing['CATNAME'] : '';
-  $cat_slug               = reformCategorySlug($cat_name);
-  $category               = addCategory($cat_name, $cat_slug);
+    $post_cats              = array();
+    $cat_name               = !empty( $listing['CATNAME'] ) ? $listing['CATNAME'] : '';
+    $cat_slug               = reformCategorySlug($cat_name);
+    $category               = addCategory($cat_name, $cat_slug);
 
-  $subcat_name            = !empty( $listing['SUBCATNAME'] ) ? $listing['SUBCATNAME'] : '';
-  if( $subcat_name != ''):
-    $subcat_slug            = reformCategorySlug($subcat_name);
-    $subcategory            = addCategory($subcat_name, $subcat_slug, $category);
-  endif;
+    $subcat_name            = !empty( $listing['SUBCATNAME'] ) ? $listing['SUBCATNAME'] : '';
+    if( $subcat_name != ''):
+      $subcat_slug            = reformCategorySlug($subcat_name);
+      $subcategory            = addCategory($subcat_name, $subcat_slug, $category);
+    endif;
 
-  array_push($post_cats, intval($category), intval($subcategory) );
-
-  // TODO: does not exist on alx
-  $ticket_link            = !empty( $listing['TICKETSLINK'] ) ? $listing['TICKETSLINK'] : '';
-  $type_of_member         = !empty( $listing['TYPEOFMEMBER'] ) ? $listing['TYPEOFMEMBER'] : '';
-  $wct_id                 = !empty( $listing['WCTID'] ) ? $listing['WCTID'] : '';
-  $hours                  = !empty( $listing['HOURS'] ) ? $listing['HOURS'] : '';
+    array_push($post_cats, intval($category), intval($subcategory) );
 
   $fields = array();
   $fields['listing_id'] = $listing['LISTINGID'];
@@ -515,18 +514,17 @@ function grab_fields($listing){
 Events
 ========================================================================== */
 
-function update_event($event, $pid) {
+function update_event($event, $pid, $log_file) {
 
-  $description						= !empty( strval($event->description) ) ? strval($event->description) : '';
-  $title 									= !empty( strval($event->title) ) ? strval($event->title) : '';
-  $eventid                = !empty( strval($event->eventid) ) ? strval($event->eventid) : '';
-
-  // error_log(print_r("Update Event: ".$pid, true));
+  $description						= isset($event->DESCRIPTION) ? $event->DESCRIPTION : '';
+  $title 									= isset($event->TITLE) ? $event->TITLE : '';
+  
+  $eventid                = isset($event->EVENTID) ? $event->EVENTID : '';
 
   $fields = grab_event_fields($event);
   update_event_standard_fields($pid, $fields);
   wp_set_post_terms($pid, $fields['post_cats'], 'category');
-  update_event_imgaes($pid, $event, $title);
+  update_event_imgaes($pid, $event, $title, $log_file);
 
   $post_data = array(
     'ID'            => $pid,
@@ -544,8 +542,8 @@ function update_event($event, $pid) {
 }
 
 function create_new_event($event) {
-  $description						= !empty( strval($event->description) ) ? strval($event->description) : '';
-  $title 									= !empty( strval($event->title) ) ? strval($event->title) : '';
+  $description						= isset($event->DESCRIPTION) ? $event->DESCRIPTION : '';
+  $title 									= isset($event->TITLE) ? $event->TITLE : '';
 
   if ($title) {
     
@@ -587,49 +585,63 @@ function create_new_event($event) {
 
 }
 
-function update_event_imgaes($pid, $event, $title) {
+function update_event_imgaes($pid, $event, $title, $log_file) {
 
-  $image_list 						=  array();
-  $event_images 					= ((array) $event->images );
+  $image_list =  array();
 
-  if ( isset( $event_images['image'] ) ) {
-
-    $event_images = $event_images['image'];
-
-    if (isset($event_images->mediafile)) {
-      $image_list[] = strval($event_images->mediafile);
-    }
-    else {
-      foreach($event_images as $index=>$image):
-        $image_list[] = strval($image->mediafile);
+  if ( isset($event->IMAGES) ) {
+    foreach ($event->IMAGES as $wrapper) {
+      foreach($wrapper['IMAGE'] as $image):
+        $image_list[] = $image['MEDIAFILE'];
       endforeach;
     }
-
   }
-  
+
   $thumbnail_id = get_post_thumbnail_id($pid);
   $gallery = get_field('media', $pid);
   
   $added_featured = false;
   $mid = array();
 
-  if (!$gallery) {
+  if ( count($gallery) < 1 ) {
     foreach ($image_list as $image_url) {
 
       $id = saveImageToWP($image_url, $pid, $title, "_events");
 
       if (!$thumbnail_id && !$added_featured ) { // set first image to be thumbnail
-        set_post_thumbnail($pid, $id);
-        $added_featured = true;
+        if ( wp_get_attachment_image_src($id) ) {
+          file_put_contents( $log_file, "Update, Gallery is Empty.".PHP_EOL, FILE_APPEND);
+          file_put_contents( $log_file, "Post ID: ".$pid.PHP_EOL, FILE_APPEND);
+          file_put_contents( $log_file, "Media ID: ".$id.PHP_EOL, FILE_APPEND);
+          set_post_thumbnail($pid, $id);
+          $added_featured = true;
+        }
       }
 
       array_push($mid, $id);
+
     }
     update_post_meta($pid, 'media', $mid);
   }
-  else if (!$thumbnail_id) { // we have to replace the thumbnail from the gallery
-    if ( isset($gallery[0]) ) {
-      set_post_thumbnail($pid, $gallery[0]['ID']);
+  // TODo: why is this a problem
+  elseif (!$thumbnail_id) { // we have to replace the thumbnail from the gallery
+    file_put_contents( $log_file, "Update, Gallery Full, No Thumbnail".PHP_EOL, FILE_APPEND);
+    file_put_contents( $log_file, "Post ID: ".$pid.PHP_EOL, FILE_APPEND);
+    file_put_contents( $log_file, "Media ID: ".$gallery[0].PHP_EOL, FILE_APPEND);
+
+    if ( isset($gallery) ) {
+      if ( isset($gallery[0]) ) {
+        if ( isset($gallery[0]['ID']) ) {
+          if ( wp_get_attachment_image_src($gallery[0]['ID']) ) {
+            set_post_thumbnail($pid, $gallery[0]['ID']);
+          }
+        }
+        else {
+          if ( wp_get_attachment_image_src($gallery[0]) ) {
+            set_post_thumbnail($pid, $gallery[0]);
+          }
+        }
+      }
     }
   }
 }
@@ -637,21 +649,13 @@ function update_event_imgaes($pid, $event, $title) {
 function process_event_images($pid, $event, $title) {
 
   $image_list 						=  array();
-  $event_images 					= ((array) $event->images );
 
-  if ( isset( $event_images['image'] ) ) {
-
-    $event_images = $event_images['image'];
-
-    if (isset($event_images->mediafile)) {
-      $image_list[] = strval($event_images->mediafile);
-    }
-    else {
-      foreach($event_images as $index=>$image):
-        $image_list[] = strval($image->mediafile);
+  if ( isset($event->IMAGES) ) {
+    foreach ($event->IMAGES as $wrapper) {
+      foreach($wrapper['IMAGE'] as $image):
+        $image_list[] = $image['MEDIAFILE'];
       endforeach;
-    } 
-
+    }
   }
 
   $added_featured = false;
@@ -659,10 +663,14 @@ function process_event_images($pid, $event, $title) {
   foreach ($image_list as $image_url) {
   
     $id = saveImageToWP($image_url, $pid, $title, "_events");
-  
+
+    // TODO: why is this a problem
     if (!$added_featured ) { // set first image to be thumbnail
-      set_post_thumbnail($pid, $id);
-      $added_featured = true;
+
+      if ( wp_get_attachment_image_src($id) ) {
+        set_post_thumbnail($pid, $id);
+        $added_featured = true;
+      }
     }
   
     array_push($mid, $id);
@@ -671,48 +679,51 @@ function process_event_images($pid, $event, $title) {
 }
 
 function grab_event_fields($event) {
-
-  $address 								= !empty( strval($event->address) ) ? strval($event->address) : '';
-  $admission 							= !empty( strval($event->admission) ) ? strval($event->admission) : '';
-  $city 									= !empty( strval($event->city) ) ? strval($event->city) : '';
-  $contact 								= !empty( strval($event->contact) ) ? strval($event->contact) : '';
-  $created 								= !empty( strval($event->created) ) ? strval($event->created) : '';
-  $email 									= !empty( strval($event->email) ) ? strval($event->email) : '';
-  $enddate 								= !empty( strval($event->enddate) ) ? date('Ymd', strtotime($event->enddate)) : '';
-  $endtime 								= !empty( strval($event->endtime) ) ? strval($event->endtime) : '';
+  
+  $address 								= isset($event->ADDRESS) ? $event->ADDRESS : '';
+  $admission 							= isset($event->ADMISSION) ? $event->ADMISSION : '';
+  $city 									= isset($event->CITY) ? $event->CITY : '';
+  $contact 								= isset($event->CONTACT) ? $event->CONTACT : '';
+  $created 								= isset($event->CREATED) ? $event->CREATED : '';
+  $email 									= isset($event->EMAIL) ? $event->EMAIL : '';
+  $enddate 								= isset($event->ENDDATE) ? date('Ymd', strtotime($event->ENDDATE)) : '';
+  $endtime 								= isset($event->ENDTIME) ? $event->ENDTIME : '';
 
   // handle $eventdates
-  $eventid                = !empty( strval($event->eventid) ) ? strval($event->eventid) : '';
-  $eventdates_array     	= array();
-  $event_eventdates  			= $event->eventdates;
-  foreach ($event_eventdates as $eventdate):
-    array_push($eventdates_array, strval($eventdate->eventdate) );
-  endforeach;
-  $eventdates 						= implode(",", $eventdates_array);
+  $eventid                = $event->EVENTID;
 
-  $eventregion 						= !empty( strval($event->eventregion) ) ? strval($event->eventregion) : '';
-  $eventtype 							= !empty( strval($event->eventtype) ) ? strval($event->eventtype) : '';
-  $featured 							= !empty( strval($event->featured) ) ? strval($event->featured) : '';
-  $hostlistingid 					= !empty( strval($event->hostlistingid) ) ? strval($event->hostlistingid) : '';
-  $hostname 							= !empty( strval($event->hostname) ) ? strval($event->hostname) : '';
-  $listingid 							= !empty( strval($event->listingid) ) ? strval($event->listingid) : '';
-  $location 							= !empty( strval($event->location) ) ? strval($event->location) : '';
+  // TODO: solve this
+  $eventdates_array     	= array();
+  $eventdates             = '';
+  // $event_eventdates  			= $event->eventdates;
+  // foreach ($event_eventdates as $eventdate):
+  //   array_push($eventdates_array, strval($eventdate->eventdate) );
+  // endforeach;
+  // $eventdates 						= implode(",", $eventdates_array);
+
+  $eventregion 						= '';
+  $eventtype 							= isset($event->EVENTTYPE) ? $event->EVENTTYPE : '';
+  $featured 							= isset($event->FEATURED) ? $event->FEATURED : '';
+  $hostlistingid 					= isset($event->HOSTLISTINGID) ? $event->HOSTLISTINGID : '';
+  $hostname 							= isset($event->HOSTNAME) ? $event->HOSTNAME : '';
+  $listingid 							= isset($event->LISTINGID) ? $event->LISTINGID : '';
+  $location 							= isset($event->LOCATION) ? $event->LOCATION : '';
 
   $map_coordinates 				= '';
-  if( !empty( $event->latitude ) && !empty( $event->longitude ) ):
-    $map_coordinates 				= strval($event->latitude) . ',' . strval($event->longitude);
+  if( isset( $event->LATITUDE ) && isset( $event->LONGITUDE ) ):
+    $map_coordinates 				= $event->LATITUDE . ',' . $event->LONGITUDE;
   endif;
 
   $mediafile 							= '';
-  $neverexpire 						= !empty(strval( $event->neverexpire) ) ? strval($event->neverexpire) : '';
-  $phone 									= !empty(strval( $event->phone) ) ? strval($event->phone) : '';
-  $recurrence 						= !empty(strval( $event->recurrence) ) ? strval($event->recurrence) : '';
-  $startdate 							= !empty(strval( $event->startdate) ) ? date('Ymd', strtotime($event->startdate)) : '';
-  $starttime 							= !empty(strval( $event->starttime) ) ? strval($event->starttime) : '';
-  $state 									= !empty(strval( $event->state) ) ? strval($event->state) : '';
-  $times 									= !empty(strval( $event->times) ) ? strval($event->times) : '';
-  $website 								= !empty(strval( $event->website) ) ? strval($event->website) : '';
-  $zip 										= !empty(strval( $event->zip) ) ? strval($event->zip) : '';
+  $neverexpire 						= isset($event->NEVEREXPIRE) ? $event->NEVEREXPIRE : '';
+  $phone 									= isset($event->PHONE) ? $event->PHONE : '';
+  $recurrence 						= isset($event->RECURRENCE) ? $event->RECURRENCE : '';
+  $startdate 							= isset($event->STARTDATE) ? date('Ymd', strtotime($event->STARTDATE)) : '';
+  $starttime 							= isset($event->STARTTIME) ? $event->STARTTIME : '';
+  $state 									= isset($event->STATE) ? $event->STATE : '';
+  $times 									= isset($event->TIMES) ? $event->TIMES : '';
+  $website 								= isset($event->WEBSITE) ? $event->WEBSITE : '';
+  $zip 										= isset($event->ZIP) ? $event->ZIP : '';
 
   $fields = array();
   $fields['address'] = $address;
@@ -747,16 +758,23 @@ function grab_event_fields($event) {
 
   // handle categories
   $post_cats = array();
-  $eventcategories				= !empty($event->eventcategories) ? $event->eventcategories : '';
-  foreach ($eventcategories->eventcategory as $category):
-    $cat_name 							= strval($category->categoryname);
-    $cat_slug								= reformCategorySlug($cat_name);
-    $category 							= addCategory($cat_name, $cat_slug);
-    array_push( $post_cats, $category );
-  endforeach;
+  if (isset($event->EVENTCATEGORIES)) {
+    $wrapper = $event->EVENTCATEGORIES;
+    foreach ($wrapper as $wrapper2) {
+      foreach ($wrapper2 as $categoriesArray) {
+        foreach($categoriesArray as $categoryArray) {
+          $cat_name 							= $categoryArray['CATEGORYNAME'];
+          $cat_slug								= reformCategorySlug($cat_name);
+          $category 							= addCategory($cat_name, $cat_slug);
+          array_push( $post_cats, $category );
+        }
+      }
+      
+    }
+  }
 
   $fields['post_cats'] = $post_cats;
-  $fields['category'] = $category;
+  $fields['category'] = $category ?? '';
 
   return $fields;
 }
@@ -803,27 +821,38 @@ function clearOldLog($logFolder) {
       return "There are less than 5 logs stored. No deletion attempted.";
     }
 
-    $least = INF;
-    foreach ($files as $file) {
-      if ($file < $least) {
-        $least = $file;
+    $nowTime = time();
+
+    foreach($files as $fileString) {
+      $date = strtok($fileString, '_');
+      $difference = $nowTime - strtotime($date);
+      $daysSince = round($difference / (60 * 60 * 24));
+
+      if ($daysSince > 5) {
+        $deleteList[] = $fileString;
       }
-    }
-    if ($least === INF) {
-      $least = 'noFile';
     }
 
-    $fullPath = $logFolder.$least;
-    if (file_exists($fullPath)) {
-      $fileDeleted = unlink($fullPath);
-      if ($fileDeleted) {
-        return "The log with path ".$fullPath." was deleted.";
+    if ( count($deleteList) > 0) {
+
+      $return_message = 'The following logs have been deleted: '.PHP_EOL;
+
+      foreach ($deleteList as $fileToDelete) {
+        $fullPath = $logFolder.$fileToDelete;
+          if (file_exists($fullPath)) {
+            $fileDeleted = unlink($fullPath);
+            if ($fileDeleted) {
+              $return_message .= $fullPath.", ".PHP_EOL;
+            }
+            else {
+              return "Error: One of the log deletions failed.";
+            }
+          }
+        }
       }
-      else {
-        return "The log deletion failed.";
-      }
+
+      return substr($return_message, 0, -2);
     }
-  }
 
   return "The path stored for the log directory is incorrect";
   
@@ -842,34 +871,36 @@ function createLog($log_options, $logType = 'listings', $cronJob, $api_results_n
   $log  	= "Start Cron Log -- ".date("F j, Y, g:i a").PHP_EOL.
             "--------------------------------------------------".PHP_EOL;
   if ($logType == 'events') {
-    $fail_message = get_option( 'sv_api_'.$logType.'_failure_message' );
+    $fail_message = get_option( 'baltimore_crm_api_'.$logType.'_failure_message' );
     $fail_message = $fail_message ? $fail_message : "No";
-    $log .= "Did Connection Fail? ".$fail_message.PHP_EOL.
+    $log .= "Did Conection Fail? ".$fail_message.PHP_EOL.
             "API Return Count: ".$api_results_num.PHP_EOL.
             "--------------------------------------------------".PHP_EOL;
   }
   else {
+    if (is_array($api_results_num)) {
+      $api_results_num = $api_results_num[0];
+    }
     $log .= 'API Connect Function Return: '.$api_results_num.PHP_EOL.
-            "Fail Message: ".get_option( 'sv_api_failure_message' ).PHP_EOL.
+            "Fail Message: ".get_option( 'baltimore_crm_api_failure_message' ).PHP_EOL.
             "--------------------------------------------------".PHP_EOL;
   }
 
   $log_folder = $log_options[$logType.'_import_folder'];
 	$log_file = $log_folder.$log_id.'_'.$logType.'_cron.log';
-	$log_success = file_put_contents ($log_file, $log, FILE_APPEND);
 
-  // TODO: if folder does not exist, create one
+	$log_success = file_put_contents($log_file, $log, FILE_APPEND);
 
-  if ($log_success) {
-    update_option( 'sv_api_last_'.$logType.'_import_log', $log_file );
+  // if ($log_success) {
+  //   update_option( 'baltimore_crm_api_last_'.$logType.'_import_log', $log_file );
     
-    $logClearedReturn = clearOldLog($log_folder);
+  //   $logClearedReturn = clearOldLog($log_folder);
     
-    $logClearedMessage = $logClearedReturn.PHP_EOL.
-                         "--------------------------------------------------".PHP_EOL;
+  //   $logClearedMessage = $logClearedReturn.PHP_EOL.
+  //                        "--------------------------------------------------".PHP_EOL;
     
-    file_put_contents ($log_file, $logClearedMessage, FILE_APPEND);
-  }
+  //   file_put_contents ($log_file, $logClearedMessage, FILE_APPEND);
+  // }
 
   return [
     $log_success,
@@ -883,8 +914,8 @@ function addLogData($log_file, $items, $startingIndex = 1) {
   $log_info = false;
   $index    = $startingIndex;
 
+  $log_info = "Adding The log data...".PHP_EOL."Count: ".count($items).PHP_EOL;
   if ( count($items) ){
-    $log_info = "";
     foreach ($items as $item_status) {
       $log_info .= $index.'. '.$item_status[0] . ' -- ' . $item_status[1].PHP_EOL;
       $index++;
@@ -901,7 +932,7 @@ function addPagedFailMessageToLog($log_file, $page) {
 
   $fail_log  =  "--------------------------------------------------".PHP_EOL.
 								"Fail Log. Page: ".$page.PHP_EOL.
-								"Fail Message: ".get_option( 'sv_api_failure_message' ).PHP_EOL.
+								"Fail Message: ".get_option( 'baltimore_crm_api_failure_message' ).PHP_EOL.
 								"--------------------------------------------------".PHP_EOL;
 
 	file_put_contents( $log_file, $fail_log, FILE_APPEND);
@@ -909,38 +940,49 @@ function addPagedFailMessageToLog($log_file, $page) {
 }
 
 function process_events($type = 'manual') {
-  update_option( 'sv_api_last_run_events', date("F j, Y, g:i a") );
-  update_option( 'sv_api_events_failure_message', false );
-  update_option( 'sv_api_event_method', $type );
-  update_option( 'sv_api_events_processed', 0 );
-  update_option( 'sv_api_events_updated',  0 );
-  update_option( 'sv_api_events_errors', 0 );
-  update_option( 'sv_api_events_added', 0 );
+  update_option( 'baltimore_crm_api_last_run_events', date("F j, Y, g:i a") );
+  update_option( 'baltimore_crm_api_events_failure_message', false );
+  update_option( 'baltimore_crm_api_event_method', $type );
+  update_option( 'baltimore_crm_api_events_processed', 0 );
+  update_option( 'baltimore_crm_api_events_updated',  0 );
+  update_option( 'baltimore_crm_api_events_errors', 0 );
+  update_option( 'baltimore_crm_api_events_added', 0 );
 
-  $events = sv_events_api_connection();
+  $events = baltimore_crm_events_api_connection();
   // return $events;
   if($events == 'error'):
     exit();
   endif;
+
 
   $processed_count  = 0;
   $updated_count 	  = 0;
   $error_count   	  = 0;
   $added_count   	  = 0;
 
-  $log_options = get_option( 'sv_api_logs' );
+  $log_options = get_option( 'baltimore_crm_api_logs' );
+
   [$log_success, $log_folder, $log_file] = createLog($log_options, 'events', true, count($events) );
 
   $existing_event_ids = existing_event_ids();
   $processed_events = array();
 
-  foreach($events as $event):
+  foreach($events as $eventArray):
+    
+    $event = (object) $eventArray;
+    
     $processed_count++;
+    
+    $eventid  = !empty( strval($event->EVENTID) ) ? strval($event->EVENTID) : '';
+    $eventTitle    = isset($event->TITLE) ? $event->TITLE : '';
 
-    $eventid = !empty( strval($event->eventid) ) ? strval($event->eventid) : '';
+    file_put_contents( $log_file, "Processing...".PHP_EOL."Post ID: ".$eventid.PHP_EOL, FILE_APPEND);
+    file_put_contents( $log_file, "Event Title: ".$eventTitle.PHP_EOL, FILE_APPEND);
 
     // Add new event
     if( !in_array($eventid, $existing_event_ids) ):
+
+      file_put_contents( $log_file, "Create New Event.".PHP_EOL, FILE_APPEND);
 
       array_push($existing_event_ids, $eventid);
       $create_new_event_result = create_new_event($event);
@@ -952,22 +994,26 @@ function process_events($type = 'manual') {
         $return_message = $create_new_event_result[1];
 
         $processed_events[$return_pid] = [
-          $event->title,
+          $event->TITLE,
           $return_message
         ];
       }
       else {
+
         $error_count++;
         
         $return_message = $create_new_event_result[1];
 
         $processed_events[$eventid] = [
-          $event->title,
+          $event->TITLE,
           $return_message
         ];
       }
 
     else :
+
+      file_put_contents( $log_file, "Update Event.".PHP_EOL, FILE_APPEND);
+
       $existant_event = get_posts( [
         'post_type' => 'events',
         'meta_key'   => 'eventid',
@@ -977,9 +1023,9 @@ function process_events($type = 'manual') {
       ] );
 
       if ($existant_event[0]) {
-
-        $update_event_result = update_event($event, $existant_event[0]);
-
+        
+        $update_event_result = update_event($event, $existant_event[0], $log_file);
+        
         if ($update_event_result[0]) {
           $updated_count++;
 
@@ -988,14 +1034,14 @@ function process_events($type = 'manual') {
 
 
           $processed_events[$return_pid] = [
-            $event->title,
+            $event->TITLE,
             $return_message
           ];
         }
         else {
           $error_count++;
           $processed_events[$eventid] = [
-            $event->title,
+            $event->TITLE,
             "Failed to update event. PID: ".$existant_event[0]
           ];
         }
@@ -1005,10 +1051,11 @@ function process_events($type = 'manual') {
     endif; // add/update event
   endforeach; //$events
 
-  update_option( 'sv_api_events_processed', $processed_count );
-  update_option( 'sv_api_events_updated',  $updated_count );
-  update_option( 'sv_api_events_errors', $error_count );
-  update_option( 'sv_api_events_added', $added_count );
+
+  update_option( 'baltimore_crm_api_events_processed', $processed_count );
+  update_option( 'baltimore_crm_api_events_updated',  $updated_count );
+  update_option( 'baltimore_crm_api_events_errors', $error_count );
+  update_option( 'baltimore_crm_api_events_added', $added_count );
 
   addLogData($log_file, $processed_events);
 }
@@ -1030,18 +1077,11 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
     $last_updated 		= $listing['LASTUPDATED'];
     $company         	= !empty( $listing['COMPANY'] ) ? $listing['COMPANY'] : false;
     $sort_company 		= !empty( $listing['SORTCOMPANY'] ) ? $listing['SORTCOMPANY'] : $svid . ' Company Name Missing';
-    
-    // error_log(print_r($svid, true));
-    // error_log(print_r($company, true));
-    
+
     if ($company) {
-      
+
       $type_name = $listing['TYPENAME'];
-      // error_log(print_r("type name: ".$type_name, true));
-      // error_log(print_r("type id: ".$listing['TYPEID'], true));
-      // error_log(print_r("rank id: ".$listing['RANKID'], true));
-      // error_log(print_r("rank name: ".$listing['RANKNAME'], true));
-      
+
       // Add new listings (only add type of website)
       if( !in_array($svid, $existing_listing_ids) 
         && !in_array($company, $existing_companies) && ($type_name == "Website") ){
@@ -1049,7 +1089,7 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
         array_push($existing_listing_ids, $svid);
         array_push($existing_companies, $company);
 
-        $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $svid);
+        $SV_API_RESPONSE = baltimore_crm_api_connection('getListing', 0, 0, $svid);
 
         $create_new_listing_result = create_new_listing($SV_API_RESPONSE);
 
@@ -1088,7 +1128,7 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
           $the_pid = $post_data[0];
           $svid = intval(get_field("listing_id", $the_pid));
 
-          $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $svid);
+          $SV_API_RESPONSE = baltimore_crm_api_connection('getListing', 0, 0, $svid);
           $update_listing_result = update_listing($SV_API_RESPONSE, $the_pid);
 
           $return_status = $update_listing_result[0];
@@ -1115,7 +1155,6 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
 
     }
   }
-
   return [
     $processed_this_page,
     $updated_this_page,
@@ -1124,3 +1163,14 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
     $this_pages_listings
   ];
 }
+
+// Maybe this could be used later for avoiding weird characters
+function xml_entity_decode($s) {
+  // illustrating how a (hypothetical) PHP-build-in-function MUST work
+    static $XENTITIES = array('&amp;','&gt;','&lt;');
+    static $XSAFENTITIES = array('#_x_amp#;','#_x_gt#;','#_x_lt#;');
+    $s = str_replace($XENTITIES,$XSAFENTITIES,$s); 
+    $s = html_entity_decode($s, ENT_HTML5|ENT_NOQUOTES, 'UTF-8'); // PHP 5.3+
+    $s = str_replace($XSAFENTITIES,$XENTITIES,$s);
+    return $s;
+ }  
