@@ -330,7 +330,7 @@ function process_membership_info($type) {
 }
 
 function get_amenities_info() {
-  $amenities_info_response = baltimore_crm_api_connection('getListingAmenities', 1);
+  $amenities_info_response = sv_api_connection('getListingAmenities', 1);
   $amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
   foreach ($amenities_info as $info) {
     $tab_id     = $info["AMENITYTABID"];
@@ -587,6 +587,9 @@ function create_new_event($event) {
 
 function update_event_imgaes($pid, $event, $title, $log_file) {
 
+  // error_log(print_r($pid.": ".$title, true));
+  // error_log(print_r($event->IMAGES, true));
+
   $image_list =  array();
 
   if ( isset($event->IMAGES) ) {
@@ -597,48 +600,73 @@ function update_event_imgaes($pid, $event, $title, $log_file) {
     }
   }
 
+  // error_log(print_r($image_list, true));
+
   $thumbnail_id = get_post_thumbnail_id($pid);
   $gallery = get_field('media', $pid);
   
   $added_featured = false;
   $mid = array();
 
+  $fill_gallery = false;
+
+  // error_log(print_r("Gallery: ", true));
+  // error_log(print_r($gallery, true));
+  
+  if ( !$gallery ) {
+    // error_log(print_r("Wipe Gallery...", true));
+    $gallery = [];
+    update_field('media', $gallery, $pid);
+  }
+
+
   if ( count($gallery) < 1 ) {
+
     foreach ($image_list as $image_url) {
 
       $id = saveImageToWP($image_url, $pid, $title, "_events");
 
-      if (!$thumbnail_id && !$added_featured ) { // set first image to be thumbnail
-        if ( wp_get_attachment_image_src($id) ) {
-          file_put_contents( $log_file, "Update, Gallery is Empty.".PHP_EOL, FILE_APPEND);
-          file_put_contents( $log_file, "Post ID: ".$pid.PHP_EOL, FILE_APPEND);
-          file_put_contents( $log_file, "Media ID: ".$id.PHP_EOL, FILE_APPEND);
-          set_post_thumbnail($pid, $id);
-          $added_featured = true;
+      if (!is_wp_error($id)) {
+        
+        if (!$thumbnail_id && !$added_featured ) { // set first image to be thumbnail
+          if ( wp_get_attachment_image_src($id) ) {
+            // file_put_contents( $log_file, "Update, Gallery is Empty.".PHP_EOL, FILE_APPEND);
+            // file_put_contents( $log_file, "Post ID: ".$pid.PHP_EOL, FILE_APPEND);
+            // file_put_contents( $log_file, "Media ID: ".$id.PHP_EOL, FILE_APPEND);
+            set_post_thumbnail($pid, $id);
+            $added_featured = true;
+          }
         }
+        
+        array_push($mid, $id);
+      
       }
-
-      array_push($mid, $id);
-
+      else {
+        file_put_contents( $log_file, "Image Upload Error: ".$image_url.PHP_EOL, FILE_APPEND );
+      }
     }
     update_post_meta($pid, 'media', $mid);
   }
   // TODo: why is this a problem
   elseif (!$thumbnail_id) { // we have to replace the thumbnail from the gallery
-    file_put_contents( $log_file, "Update, Gallery Full, No Thumbnail".PHP_EOL, FILE_APPEND);
-    file_put_contents( $log_file, "Post ID: ".$pid.PHP_EOL, FILE_APPEND);
-    file_put_contents( $log_file, "Media ID: ".$gallery[0].PHP_EOL, FILE_APPEND);
+    // file_put_contents( $log_file, "Update, Gallery Full, No Thumbnail".PHP_EOL, FILE_APPEND);
+    // file_put_contents( $log_file, "Post ID: ".$pid.PHP_EOL, FILE_APPEND);
+    // file_put_contents( $log_file, "Media ID: ".$gallery[0].PHP_EOL, FILE_APPEND);
+
+    // error_log(print_r($gallery, true));
 
     if ( isset($gallery) ) {
       if ( isset($gallery[0]) ) {
-        if ( isset($gallery[0]['ID']) ) {
-          if ( wp_get_attachment_image_src($gallery[0]['ID']) ) {
-            set_post_thumbnail($pid, $gallery[0]['ID']);
+        if (!is_wp_error($gallery[0])) {
+          if ( isset($gallery[0]['ID']) ) {
+            if ( wp_get_attachment_image_src($gallery[0]['ID']) ) {
+              set_post_thumbnail($pid, $gallery[0]['ID']);
+            }
           }
-        }
-        else {
-          if ( wp_get_attachment_image_src($gallery[0]) ) {
-            set_post_thumbnail($pid, $gallery[0]);
+          else {
+            if ( wp_get_attachment_image_src($gallery[0]) ) {
+              set_post_thumbnail($pid, $gallery[0]);
+            }
           }
         }
       }
@@ -665,7 +693,7 @@ function process_event_images($pid, $event, $title) {
     $id = saveImageToWP($image_url, $pid, $title, "_events");
 
     // TODO: why is this a problem
-    if (!$added_featured ) { // set first image to be thumbnail
+    if (!$added_featured && !is_wp_error($id) ) { // set first image to be thumbnail
 
       if ( wp_get_attachment_image_src($id) ) {
         set_post_thumbnail($pid, $id);
@@ -867,11 +895,16 @@ function getLogFile($log_options, $logType) {
 
 function createLog($log_options, $logType = 'listings', $cronJob, $api_results_num = false) {
 
+  $logData = get_option( 'sv_api_logs' );
+  $logData['events_import_folder'] = plugin_dir_path( __FILE__ ) . 'logs/event_logs/';
+  $logData['listings_import_folder'] = plugin_dir_path( __FILE__ ) . 'logs/listing_logs/';
+  update_option( 'sv_api_logs', $logData );
+
   $log_id = date("Ymd");
   $log  	= "Start Cron Log -- ".date("F j, Y, g:i a").PHP_EOL.
             "--------------------------------------------------".PHP_EOL;
   if ($logType == 'events') {
-    $fail_message = get_option( 'baltimore_crm_api_'.$logType.'_failure_message' );
+    $fail_message = get_option( 'sv_api_'.$logType.'_failure_message' );
     $fail_message = $fail_message ? $fail_message : "No";
     $log .= "Did Conection Fail? ".$fail_message.PHP_EOL.
             "API Return Count: ".$api_results_num.PHP_EOL.
@@ -882,17 +915,18 @@ function createLog($log_options, $logType = 'listings', $cronJob, $api_results_n
       $api_results_num = $api_results_num[0];
     }
     $log .= 'API Connect Function Return: '.$api_results_num.PHP_EOL.
-            "Fail Message: ".get_option( 'baltimore_crm_api_failure_message' ).PHP_EOL.
+            "Fail Message: ".get_option( 'sv_api_' ).PHP_EOL.
             "--------------------------------------------------".PHP_EOL;
   }
 
   $log_folder = $log_options[$logType.'_import_folder'];
 	$log_file = $log_folder.$log_id.'_'.$logType.'_cron.log';
 
+
 	$log_success = file_put_contents($log_file, $log, FILE_APPEND);
 
   // if ($log_success) {
-  //   update_option( 'baltimore_crm_api_last_'.$logType.'_import_log', $log_file );
+  //   update_option( 'sv_api_last_'.$logType.'_import_log', $log_file );
     
   //   $logClearedReturn = clearOldLog($log_folder);
     
@@ -932,7 +966,7 @@ function addPagedFailMessageToLog($log_file, $page) {
 
   $fail_log  =  "--------------------------------------------------".PHP_EOL.
 								"Fail Log. Page: ".$page.PHP_EOL.
-								"Fail Message: ".get_option( 'baltimore_crm_api_failure_message' ).PHP_EOL.
+								"Fail Message: ".get_option( 'sv_api_failure_message' ).PHP_EOL.
 								"--------------------------------------------------".PHP_EOL;
 
 	file_put_contents( $log_file, $fail_log, FILE_APPEND);
@@ -940,32 +974,32 @@ function addPagedFailMessageToLog($log_file, $page) {
 }
 
 function process_events($type = 'manual') {
-  update_option( 'baltimore_crm_api_last_run_events', date("F j, Y, g:i a") );
-  update_option( 'baltimore_crm_api_events_failure_message', false );
-  update_option( 'baltimore_crm_api_event_method', $type );
-  update_option( 'baltimore_crm_api_events_processed', 0 );
-  update_option( 'baltimore_crm_api_events_updated',  0 );
-  update_option( 'baltimore_crm_api_events_errors', 0 );
-  update_option( 'baltimore_crm_api_events_added', 0 );
+  update_option( 'sv_api_last_run_events', date("F j, Y, g:i a") );
+  update_option( 'sv_api_events_failure_message', false );
+  update_option( 'sv_api_event_method', $type );
+  update_option( 'sv_api_events_processed', 0 );
+  update_option( 'sv_api_events_updated',  0 );
+  update_option( 'sv_api_events_errors', 0 );
+  update_option( 'sv_api_events_added', 0 );
 
-  $events = baltimore_crm_events_api_connection();
+  $events = sv_events_api_connection();
   // return $events;
   if($events == 'error'):
     exit();
   endif;
-
 
   $processed_count  = 0;
   $updated_count 	  = 0;
   $error_count   	  = 0;
   $added_count   	  = 0;
 
-  $log_options = get_option( 'baltimore_crm_api_logs' );
+  $log_options = get_option( 'sv_api_logs' );
 
   [$log_success, $log_folder, $log_file] = createLog($log_options, 'events', true, count($events) );
 
   $existing_event_ids = existing_event_ids();
   $processed_events = array();
+
 
   foreach($events as $eventArray):
     
@@ -1052,10 +1086,10 @@ function process_events($type = 'manual') {
   endforeach; //$events
 
 
-  update_option( 'baltimore_crm_api_events_processed', $processed_count );
-  update_option( 'baltimore_crm_api_events_updated',  $updated_count );
-  update_option( 'baltimore_crm_api_events_errors', $error_count );
-  update_option( 'baltimore_crm_api_events_added', $added_count );
+  update_option( 'sv_api_events_processed', $processed_count );
+  update_option( 'sv_api_events_updated',  $updated_count );
+  update_option( 'sv_api_events_errors', $error_count );
+  update_option( 'sv_api_events_added', $added_count );
 
   addLogData($log_file, $processed_events);
 }
@@ -1089,7 +1123,7 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
         array_push($existing_listing_ids, $svid);
         array_push($existing_companies, $company);
 
-        $SV_API_RESPONSE = baltimore_crm_api_connection('getListing', 0, 0, $svid);
+        $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $svid);
 
         $create_new_listing_result = create_new_listing($SV_API_RESPONSE);
 
@@ -1128,7 +1162,7 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
           $the_pid = $post_data[0];
           $svid = intval(get_field("listing_id", $the_pid));
 
-          $SV_API_RESPONSE = baltimore_crm_api_connection('getListing', 0, 0, $svid);
+          $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $svid);
           $update_listing_result = update_listing($SV_API_RESPONSE, $the_pid);
 
           $return_status = $update_listing_result[0];
