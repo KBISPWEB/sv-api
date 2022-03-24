@@ -541,9 +541,11 @@ function update_event($event, $pid, $log_file) {
   ];
 }
 
-function create_new_event($event) {
+function create_new_event($event, $log_file) {
   $description						= isset($event->DESCRIPTION) ? $event->DESCRIPTION : '';
   $title 									= isset($event->TITLE) ? $event->TITLE : '';
+
+  // error_log(print_r("Create New. Title: ".$title, true));
 
   if ($title) {
     
@@ -562,7 +564,7 @@ function create_new_event($event) {
     $fields = grab_event_fields($event);
     update_event_standard_fields($pid, $fields);
     wp_set_post_terms($pid, $fields['post_cats'], 'category');
-    process_event_images($pid, $event, $title);
+    process_event_images($pid, $event, $title, $log_file);
 
     return [
       true,
@@ -674,7 +676,7 @@ function update_event_imgaes($pid, $event, $title, $log_file) {
   }
 }
 
-function process_event_images($pid, $event, $title) {
+function process_event_images($pid, $event, $title, $log_file) {
 
   $image_list 						=  array();
 
@@ -686,22 +688,32 @@ function process_event_images($pid, $event, $title) {
     }
   }
 
+  // error_log(print_r($image_list, true));
+
   $added_featured = false;
   $mid = array();
   foreach ($image_list as $image_url) {
   
     $id = saveImageToWP($image_url, $pid, $title, "_events");
 
-    // TODO: why is this a problem
-    if (!$added_featured && !is_wp_error($id) ) { // set first image to be thumbnail
+    if (!is_wp_error($id)) {
 
-      if ( wp_get_attachment_image_src($id) ) {
-        set_post_thumbnail($pid, $id);
-        $added_featured = true;
+      // error_log(print_r("Image Uploded: ".$id, true));
+
+      if (!$added_featured && !is_wp_error($id) ) { // set first image to be thumbnail
+
+        if ( wp_get_attachment_image_src($id) ) {
+          set_post_thumbnail($pid, $id);
+          $added_featured = true;
+        }
       }
-    }
   
-    array_push($mid, $id);
+      array_push($mid, $id);
+    }
+    else {
+      // error_log(print_r("Image Upload Error: ".$image_url, true));
+      file_put_contents( $log_file, "Image Upload Error: ".$image_url.PHP_EOL, FILE_APPEND );
+    }
   }
   update_post_meta($pid, 'media', $mid);
 }
@@ -1019,7 +1031,7 @@ function process_events($type = 'manual') {
       file_put_contents( $log_file, "Create New Event.".PHP_EOL, FILE_APPEND);
 
       array_push($existing_event_ids, $eventid);
-      $create_new_event_result = create_new_event($event);
+      $create_new_event_result = create_new_event($event, $log_file);
 
       if ($create_new_event_result[0]) {
         $added_count++;
