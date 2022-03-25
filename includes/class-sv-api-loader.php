@@ -609,6 +609,10 @@ class SV_Api_Loader {
 
 					$tmp = download_url( $image_url );
 
+					if ( is_wp_error($tmp) ) {
+						return false;
+					}
+
 					// $desc = get_the_title($pid);
 					$file_array = array();
 
@@ -625,19 +629,11 @@ class SV_Api_Loader {
 					$file_array['name'] = $str1.$append.$str2;
 					$file_array['tmp_name'] = $tmp;
 
-					// If error storing temporarily, unlink
-					if ( is_wp_error( $tmp ) ) {
-						//var_dump($tmp);
-						@unlink($file_array['tmp_name']);
-						$file_array['tmp_name'] = '';
-					}
-
 					// do the validation and storage stuff
 					$mid = media_handle_sideload( $file_array, $pid, $desc );
 
-					// If error storing permanently, unlink
 					if ( is_wp_error($mid) ) {
-						@unlink($file_array['tmp_name']);
+						return false;
 					}
 					return $mid;
 			}

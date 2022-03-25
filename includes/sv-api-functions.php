@@ -628,7 +628,7 @@ function update_event_imgaes($pid, $event, $title, $log_file) {
 
       $id = saveImageToWP($image_url, $pid, $title, "_events");
 
-      if (!is_wp_error($id)) {
+      if ($id) {
         
         if (!$thumbnail_id && !$added_featured ) { // set first image to be thumbnail
           if ( wp_get_attachment_image_src($id) ) {
@@ -696,7 +696,7 @@ function process_event_images($pid, $event, $title, $log_file) {
   
     $id = saveImageToWP($image_url, $pid, $title, "_events");
 
-    if (!is_wp_error($id)) {
+    if ($id) {
 
       // error_log(print_r("Image Uploded: ".$id, true));
 
