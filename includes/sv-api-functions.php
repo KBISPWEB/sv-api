@@ -22,7 +22,7 @@ function create_new_listing($response){
     if ($company) { // if company name missing, abort
 
       $standard_fields = grab_fields($listing);
-      $listing_type_id = process_membership_info($listing['TypeofMember']);
+      $listing_type_id = isset($listing['TypeofMember']) ? process_membership_info($listing['TypeofMember']) : false;
       $images          = process_api_images($images_response, $hr_response);
 
       // Create the post
@@ -100,7 +100,7 @@ function update_listing($response, $pid) {
     }
 
     $standard_fields = grab_fields($listing);
-    $listing_type_id = process_membership_info($listing['TypeofMember']);
+    $listing_type_id = isset($listing['TypeofMember']) ? process_membership_info($listing['TypeofMember']) : false;
 
     $images = process_api_images($images_response, $hr_response);
 
@@ -564,6 +564,7 @@ function create_new_event($event, $log_file) {
     $fields = grab_event_fields($event);
     update_event_standard_fields($pid, $fields);
     wp_set_post_terms($pid, $fields['post_cats'], 'category');
+    // error_log(print_r("Before Process Events", true));
     process_event_images($pid, $event, $title, $log_file);
 
     return [

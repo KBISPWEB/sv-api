@@ -368,11 +368,23 @@ class SV_Api_Loader {
 
 			$result_http_code = $result_info['http_code'];
 
-			$xml = simplexml_load_string($result);
-			$json = json_encode($xml);
-			$response = json_decode($json,TRUE);
+			// error_log(print_r($api_url, true));
+			// error_log(print_r($data, true));
+			// error_log(print_r($result, true));
 
-			if( $api_action == 'getListings' ):
+			$xml = simplexml_load_string($result);
+			if ($xml === false){
+				update_option( 'sv_api_failure_message', 'Api did not return XML' );
+				update_option( 'sv_api_failure_detail', $result_http_code );
+				update_option( 'sv_api_failure', 'yes' );
+				return 'error';
+			}
+			else {
+				$json = json_encode($xml);
+				$response = json_decode($json,TRUE);
+			}
+
+			if( $api_action == 'getListings' && $response ):
 				$haserrors = $response['REQUESTSTATUS']['HASERRORS'];
 				$results_count = $response['REQUESTSTATUS']['RESULTS'];
 			endif;

@@ -1692,16 +1692,20 @@ class SV_Api_Admin {
 
 		$tag_to_tab = array();
 
+		/*
 		$amenities_info_response = sv_api_connection('getListingAmenities', 1);
-		$amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
-		foreach ($amenities_info as $info) {
-			$tab_id 		= $info["AMENITYTABID"];
-			$tab_name 		= $info["AMENITYTABNAME"];
+		if ($amenities_info_response !== 'error') {
+			$amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
+			foreach ($amenities_info as $info) {
+				$tab_id 		= $info["AMENITYTABID"];
+				$tab_name 		= $info["AMENITYTABNAME"];
 
-			if ( !(isset($tag_to_tab[$tab_id])) ) {
-				$tag_to_tab[$tab_id] = array($tab_name , array() ) ;
+				if ( !(isset($tag_to_tab[$tab_id])) ) {
+					$tag_to_tab[$tab_id] = array($tab_name , array() ) ;
+				}
 			}
 		}
+		*/
 
 		update_option( 'sv_api_last_run', date("F j, Y, g:i a") );
 		update_option( 'sv_api_failure_last_run', false );
@@ -1795,17 +1799,20 @@ class SV_Api_Admin {
 
 		$tag_to_tab = array();
 
-		$amenities_info_response = sv_api_connection('getListingAmenities', 1);
-		$amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
-		foreach ($amenities_info as $info) {
-			$tab_id 		= $info["AMENITYTABID"];
-			$tab_name 		= $info["AMENITYTABNAME"];
 
-			if ( !(isset($tag_to_tab[$tab_id])) ) {
-				$tag_to_tab[$tab_id] = array($tab_name , array() ) ;
+		$amenities_info_response = sv_api_connection('getListingAmenities', 1);
+		if ($amenities_info_response !== 'error') {
+			$amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
+			foreach ($amenities_info as $info) {
+				$tab_id 		= $info["AMENITYTABID"];
+				$tab_name 		= $info["AMENITYTABNAME"];
+				
+				if ( !(isset($tag_to_tab[$tab_id])) ) {
+					$tag_to_tab[$tab_id] = array($tab_name , array() ) ;
+				}
 			}
 		}
-
+			
 		/* ==========================================================================
 		BULK LISTINGS
 		========================================================================== */
@@ -1854,6 +1861,7 @@ class SV_Api_Admin {
 				$existing_companies 	= existing_companies();
 
 				$response = sv_api_connection('getListings', $api_pagesize, $page);
+
 				if( $response == 'error'):
 					$failed = true;
 				endif;
