@@ -1949,19 +1949,19 @@ class SV_Api_Admin {
 		foreach ($coupons as $coupon) {
 
 			$our_listing = new WP_Query(
-								    		  array(
-								    		    'post_type'      => 'listings',
-								    		    'post_status' 	 => array('publish'),
-								    		    'posts_per_page' => 1,
-								    		    'meta_query' => array(
-								    		                      array(
-								    		                          'key' => 'listing_id',
-								    		                          'value' => $coupon['LISTINGID'],
-								    		                          'compare' => '='
-								    		                      )
-								    		    )
-								    		  )
-    										);
+									array(
+									'post_type'      => 'listings',
+									'post_status' 	 => array('publish'),
+									'posts_per_page' => 1,
+									'meta_query' => array(
+														array(
+															'key' => 'listing_id',
+															'value' => $coupon['LISTINGID'],
+															'compare' => '='
+														)
+													)
+									)
+								);
 
 			if (isset($our_listing->posts[0])) {
 				$our_listing_id = $our_listing->posts[0]->ID;
@@ -1975,6 +1975,15 @@ class SV_Api_Admin {
 			$category = $coupon['CATNAME'];
 			$coupon_array['coupon_id'] = $coupon['COUPONID'];
 			$coupon_array['our_listing_id'] = $our_listing_id;
+			$coupon_array['title'] = '';
+			$coupon_array['company'] = '';
+			$coupon_array['address'] = '';
+			$coupon_array['url'] = '';
+			$coupon_array['copy'] = '';
+			$coupon_array['startdate'] = '';
+			$coupon_array['enddate'] = '';
+			$coupon_array['image'] = false;
+			$coupon_array['image_id'] = false;
 
 
 			if ( (!is_array($coupon['ADDR1'])) ) {
@@ -2041,147 +2050,151 @@ class SV_Api_Admin {
 		}
 
 		foreach ($cat_array as $catname => $category) {
-    	// error_log(print_r($catname, true));
+    		// error_log(print_r($catname, true));
 
-    	$tag = get_term_by('name', $catname, 'post_tag');
+			$tag = get_term_by('name', $catname, 'post_tag');
 
-    	if ($tag) {
-    		$tag_id = $tag->term_id;
-    	}
-    	else { // create the tag
-    		$tag_id = wp_insert_term(
-    		  $catname, // the term
-    		  'post_tag', // the taxonomy
-    		  array(
-    		    'slug' => sanitize_title($catname),
-    		  )
-    		);
-    		$tag = get_term_by('name', $catname, 'post_tag');
-    	}
+			if ($tag) {
+				$tag_id = $tag->term_id;
+			}
+			else { // create the tag
+				$tag_id = wp_insert_term(
+					$catname, // the term
+					'post_tag', // the taxonomy
+					array(
+						'slug' => sanitize_title($catname),
+					)
+				);
+				$tag = get_term_by('name', $catname, 'post_tag');
+			}
 
-    	foreach ($category as $coupon) {
-    		$coupon_post = new WP_Query(
-    		  array(
-    		    'post_type'      => 'coupons',
-    		    'post_status' 	 => array('publish', 'trash'),
-    		    'posts_per_page' => 1,
-    		    'meta_query' => array(
-    		                      array(
-    		                          'key' => 'offer_id',
-    		                          'value' => $coupon['coupon_id'],
-    		                          'compare' => '='
-    		                      )
-    		    )
-    		  )
-    		);
+			foreach ($category as $coupon) {
+				$coupon_post = new WP_Query(
+					array(
+						'post_type'      => 'coupons',
+						'post_status' 	 => array('publish', 'trash'),
+						'posts_per_page' => 1,
+						'meta_query' => array(
+											array(
+												'key' => 'offer_id',
+												'value' => $coupon['coupon_id'],
+												'compare' => '='
+											)
+										)
+					)
+				);
 
-    		if ( count($coupon_post->posts) ) { //post already exists
-    			$pid = $coupon_post->posts[0]->ID;
+				if ( count($coupon_post->posts) ) { //post already exists
+					$pid = $coupon_post->posts[0]->ID;
 
-    			// if the post is old, add it to the trash
-    			if ( isset( $coupon['enddate'] ) ) {
-    				$formatted_date = str_replace('-', '/', $coupon['enddate']);
+					// if the post is old, add it to the trash
+					if ( isset( $coupon['enddate'] ) ) {
+						$formatted_date = str_replace('-', '/', $coupon['enddate']);
 
-    				if ( strtotime( $formatted_date ) < time() ) {
-    					wp_trash_post($pid);
-    				}
-    			}
+						if ( strtotime( $formatted_date ) < time() ) {
+							wp_trash_post($pid);
+						}
+					}
 
-    			if ($coupon['image']) {
+					if ($coupon['image']) {
 
-	    			$check_image_args = array(
-		            'post_type'      => 'attachment',
-		            //'post_mime_type' => 'image',
-		            'post_status'    => 'any',
-		            'posts_per_page' => -1,
-		            'meta_key'      => 'simpleview_id',
-		            'meta_value'    =>  $coupon['image_id']
-		        );
+						$check_image_args = array(
+							'post_type'      => 'attachment',
+							//'post_mime_type' => 'image',
+							'post_status'    => 'any',
+							'posts_per_page' => -1,
+							'meta_key'      => 'simpleview_id',
+							'meta_value'    =>  $coupon['image_id']
+						);
 
-		        $check_image = new WP_Query( $check_image_args );
+						$check_image = new WP_Query( $check_image_args );
 
-		        if ( !($check_image->posts) ) { // image does not exist
-		        	$attachment_id = saveImageToWP($coupon['image'], $pid);
-		        	update_field('simpleview_id', $coupon['image_id'], $attachment_id);
-		        	set_post_thumbnail($pid, $attachment_id);
-		        }
-    			}
-
-
-    			update_field('offer_id', $coupon['coupon_id'], $pid);
-
-    			$overwrite_category = get_field('overwrite_category', $pid);
-    			$overwrite_title = get_field('overwrite_title', $pid);
-    			$overwrite_company = get_field('overwrite_company', $pid);
-    			$overwrite_address = get_field('overwrite_address', $pid);
-    			$overwrite_link = get_field('overwrite_link', $pid);
-    			$overwrite_offer_copy = get_field('overwrite_offer_copy', $pid);
-
-    			if (!$overwrite_category) {
-    				update_field('offer_category', $tag_id, $pid);
-    			}
-    			if (!$overwrite_title) {
-    				update_field('title', $coupon['title'], $pid);
-    			}
-    			if (!$overwrite_company) {
-    				update_field('company', $coupon['company'], $pid);
-    			}
-    			if (!$overwrite_address) {
-    				update_field('address', $coupon['address'], $pid);
-    			}
-    			if (!$overwrite_offer_copy) {
-    				update_field('offer_copy', $coupon['copy'], $pid);
-    			}
-    			if ( !$overwrite_link  ) {
-    				update_field('link_to_offer', $coupon['url'], $pid);
-    			}
-
-    			update_field('internal_listing_id', $coupon['our_listing_id'], $pid);
+						if ( !($check_image->posts) ) { // image does not exist
+							$attachment_id = saveImageToWP($coupon['image'], $pid);
+							if (!is_wp_error($attachment_id)) {
+								update_field('simpleview_id', $coupon['image_id'], $attachment_id);
+								set_post_thumbnail($pid, $attachment_id);
+							}
+						}
+					}
 
 
-    			if ( isset( $coupon['startdate'] ) ) {
-    				update_field('offer_start_date', $coupon['startdate'], $pid);
-    			}
-    			if ( isset( $coupon['enddate'] ) ) {
-    				update_field('offer_end_date', $coupon['enddate'], $pid);
-    			}
+					update_field('offer_id', $coupon['coupon_id'], $pid);
 
-    		}
-    		else { // new post
+					$overwrite_category = get_field('overwrite_category', $pid);
+					$overwrite_title = get_field('overwrite_title', $pid);
+					$overwrite_company = get_field('overwrite_company', $pid);
+					$overwrite_address = get_field('overwrite_address', $pid);
+					$overwrite_link = get_field('overwrite_link', $pid);
+					$overwrite_offer_copy = get_field('overwrite_offer_copy', $pid);
 
-    			$post = array(
-    				'post_author'   => 1,
-    				'post_status'   => 'publish',
-    				'post_type'     => 'coupons'
-    			);
+					if (!$overwrite_category) {
+						update_field('offer_category', $tag_id, $pid);
+					}
+					if (!$overwrite_title) {
+						update_field('title', $coupon['title'], $pid);
+					}
+					if (!$overwrite_company) {
+						update_field('company', $coupon['company'], $pid);
+					}
+					if (!$overwrite_address) {
+						update_field('address', $coupon['address'], $pid);
+					}
+					if (!$overwrite_offer_copy) {
+						update_field('offer_copy', $coupon['copy'], $pid);
+					}
+					if ( !$overwrite_link  ) {
+						update_field('link_to_offer', $coupon['url'], $pid);
+					}
 
-    			if (isset($coupon['title'])) {
-    				$post['post_title'] = $coupon['title'];
-    			}
-    			else {
-    				$post['post_title'] = "Coupon ".$coupon['coupon_id'];
-    			}
+					update_field('internal_listing_id', $coupon['our_listing_id'], $pid);
 
-    			$pid = wp_insert_post($post, true);
 
-    			if ($coupon['image']) {
-    				$attachment_id = saveImageToWP($coupon['image'], $pid);
-    				update_field('simpleview_id', $coupon['image_id'], $attachment_id);
-    			}
-    			set_post_thumbnail($pid, $attachment_id);
+					if ( isset( $coupon['startdate'] ) ) {
+						update_field('offer_start_date', $coupon['startdate'], $pid);
+					}
+					if ( isset( $coupon['enddate'] ) ) {
+						update_field('offer_end_date', $coupon['enddate'], $pid);
+					}
 
-    			update_field('offer_id', 	$coupon['coupon_id'], $pid);
-    			update_field('offer_category', $tag_id, $pid);
-    			update_field('title', $coupon['title'], $pid);
-    			update_field('company', $coupon['company'], $pid);
-    			update_field('address', $coupon['address'], $pid);
-    			update_field('link_to_offer', $coupon['url'], $pid);
-    			update_field('offer_start_date', $coupon['startdate'], $pid);
-    			update_field('offer_end_date', $coupon['enddate'], $pid);
-    			update_field('offer_copy', $coupon['copy'], $pid);
-    			update_field('internal_listing_id', $coupon['our_listing_id'], $pid);
-    		}
-    	}
+				}
+				else { // new post
+
+					$post = array(
+						'post_author'   => 1,
+						'post_status'   => 'publish',
+						'post_type'     => 'coupons'
+					);
+
+					if (isset($coupon['title'])) {
+						$post['post_title'] = $coupon['title'];
+					}
+					else {
+						$post['post_title'] = "Coupon ".$coupon['coupon_id'];
+					}
+
+					$pid = wp_insert_post($post, true);
+
+					if ($coupon['image']) {
+						$attachment_id = saveImageToWP($coupon['image'], $pid);
+						if (!is_wp_error($attachment_id)) {
+							update_field('simpleview_id', $coupon['image_id'], $attachment_id);
+						}
+					}
+					set_post_thumbnail($pid, $attachment_id);
+
+					update_field('offer_id', 	$coupon['coupon_id'], $pid);
+					update_field('offer_category', $tag_id, $pid);
+					update_field('title', $coupon['title'], $pid);
+					update_field('company', $coupon['company'], $pid);
+					update_field('address', $coupon['address'], $pid);
+					update_field('link_to_offer', $coupon['url'], $pid);
+					update_field('offer_start_date', $coupon['startdate'], $pid);
+					update_field('offer_end_date', $coupon['enddate'], $pid);
+					update_field('offer_copy', $coupon['copy'], $pid);
+					update_field('internal_listing_id', $coupon['our_listing_id'], $pid);
+				}
+			}
 		}
 	}
 
