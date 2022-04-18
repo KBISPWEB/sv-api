@@ -37,8 +37,10 @@ function create_new_listing($response){
 
       // populate amenities textarea
       $tag_to_tab = get_amenities_info();
-      $amenities_string = process_amenities($listing['AMENITIES']['ITEM'], $tag_to_tab);
+      [$amenities_string, $amenities_taxonomies] = process_amenities($listing['AMENITIES']['ITEM'], $tag_to_tab);
       update_field("amenities", $amenities_string, $pid);
+      wp_set_object_terms($pid, $amenities_taxonomies, 'amenities');
+
 
       // add post terms
       wp_set_object_terms($pid, $standard_fields['post_cats'], 'category');
@@ -131,8 +133,11 @@ function update_listing($response, $pid) {
 
       // populate amenities textarea
       $tag_to_tab = get_amenities_info();
-      $amenities_string = process_amenities($listing['AMENITIES']['ITEM'], $tag_to_tab);
+      [$amenities_string, $amenities_taxonomies] = process_amenities($listing['AMENITIES']['ITEM'], $tag_to_tab);
       update_field("amenities", $amenities_string, $pid);
+      wp_set_object_terms($pid, $amenities_taxonomies, 'amenities');
+
+      // handle amenities texonomy
 
       // add post terms
       wp_set_object_terms($pid, $standard_fields['post_cats'], 'category');
@@ -330,14 +335,23 @@ function process_membership_info($type) {
 }
 
 function get_amenities_info() {
-  $amenities_info_response = sv_api_connection('getListingAmenities', 1);
-  $amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
-  foreach ($amenities_info as $info) {
-    $tab_id     = $info["AMENITYTABID"];
-    $tab_name   = $info["AMENITYTABNAME"];
 
-    if ( !(isset($tag_to_tab[$tab_id])) ) {
-      $tag_to_tab[$tab_id] = array($tab_name , array() ) ;
+  $tag_to_tab = array();
+
+  $amenities_info_response = sv_api_connection('getListingAmenities', 1);
+  if ($amenities_info_response !== 'error') {
+    $amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
+    foreach ($amenities_info as $info) {
+
+      $tab_id 		= $info["AMENITYTABID"];
+      $tab_name 		= $info["AMENITYTABNAME"];
+      $tab_slug  		= reformCategorySlug($tab_name);
+      
+      $tab_cat_id  	= addCategory($tab_name, $tab_slug, '', 'amenities');
+
+      if ( !(isset($tag_to_tab[$tab_id])) ) {
+        $tag_to_tab[$tab_id] = array($tab_name , array(), $tab_cat_id);
+      }
     }
   }
 
@@ -368,7 +382,7 @@ function process_amenities($amenities_response, $tag_to_tab) {
 
     if ( count($tab_amenities) > 0 ) {
       foreach($tab_amenities as $name => $value){
-        if ($value == '1'){
+        if ($value === false){
           $amenities_list_string .= "<li>".$name."</li>";
         }
         else {
@@ -384,6 +398,26 @@ function process_amenities($amenities_response, $tag_to_tab) {
     }
   }
 
+  $amenities_taxonomies = array();
+  foreach($tag_to_tab as $tab) {
+
+    $tab_name = $tab[0];
+    $tab_amenities = $tab[1];
+
+    $parent_slug  = reformCategorySlug($tab_name);
+    $parent_tax = get_term_by('slug', $parent_slug, 'amenities');
+    $parent_id = $parent_tax->term_id;
+
+    if ( count($tab_amenities) > 0 ) {
+      foreach($tab_amenities as $cat_name => $value){
+        $cat_slug  = reformCategorySlug($cat_name);
+        
+        $category  = addCategory($cat_name, $cat_slug, $parent_id, 'amenities');
+        $amenities_taxonomies[] = intval($category);
+      }
+    }
+  }
+
   // Clear The Array
   foreach ($amenities_response as $amenity) {
     if ( isset($amenity['AMENITYTABID']) ) {
@@ -393,7 +427,13 @@ function process_amenities($amenities_response, $tag_to_tab) {
     }
   }
 
-  return $amenities_string;
+  error_log(print_r($amenities_string, true));
+  error_log(print_r($amenities_taxonomies, true));
+
+  return [
+      $amenities_string, 
+      $amenities_taxonomies
+  ];
 }
 
 function grab_fields($listing){

@@ -182,8 +182,9 @@ class SV_Api_Loader {
 
 		function addCategory($cat_name, $cat_slug, $parent = '', $tax = 'category') {
 			require_once( ABSPATH . '/wp-admin/includes/taxonomy.php');
-			$check_cat_exist = get_category_by_slug($cat_slug);
-			if( $check_cat_exist == false ):
+			$check_cat_exists = get_term_by('slug', $cat_slug, $tax);
+
+			if( $check_cat_exists == false ):
 				$cat_array = array(
 					'cat_name' => $cat_name,
 					'category_description' => '',
@@ -193,8 +194,9 @@ class SV_Api_Loader {
 				);
 				$cat_id = wp_insert_category($cat_array);
 			else:
-				$cat_id = $check_cat_exist->term_id;
+				$cat_id = $check_cat_exists->term_id;
 			endif;
+
 			return $cat_id;
 		} // addCategory
 

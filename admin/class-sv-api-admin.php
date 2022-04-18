@@ -1690,23 +1690,6 @@ class SV_Api_Admin {
 
 	public function run_bulk_listings_CRON(){
 
-		$tag_to_tab = array();
-
-		/*
-		$amenities_info_response = sv_api_connection('getListingAmenities', 1);
-		if ($amenities_info_response !== 'error') {
-			$amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
-			foreach ($amenities_info as $info) {
-				$tab_id 		= $info["AMENITYTABID"];
-				$tab_name 		= $info["AMENITYTABNAME"];
-
-				if ( !(isset($tag_to_tab[$tab_id])) ) {
-					$tag_to_tab[$tab_id] = array($tab_name , array() ) ;
-				}
-			}
-		}
-		*/
-
 		update_option( 'sv_api_last_run', date("F j, Y, g:i a") );
 		update_option( 'sv_api_failure_last_run', false );
 		update_option( 'sv_api_method', 'cron' );
@@ -1796,23 +1779,9 @@ class SV_Api_Admin {
 	} //run_bulk_listings
 
 	public function run_bulk_listings(){
-
-		$tag_to_tab = array();
-
-
-		$amenities_info_response = sv_api_connection('getListingAmenities', 1);
-		if ($amenities_info_response !== 'error') {
-			$amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
-			foreach ($amenities_info as $info) {
-				$tab_id 		= $info["AMENITYTABID"];
-				$tab_name 		= $info["AMENITYTABNAME"];
-				
-				if ( !(isset($tag_to_tab[$tab_id])) ) {
-					$tag_to_tab[$tab_id] = array($tab_name , array() ) ;
-				}
-			}
-		}
 			
+		$page = intval($_POST['page']);
+
 		/* ==========================================================================
 		BULK LISTINGS
 		========================================================================== */
@@ -1820,7 +1789,6 @@ class SV_Api_Admin {
 			if ( isset($_POST['is_triggered']) && $_POST['is_triggered'] == 'true' ):
 			// if ( false ):
 
-				$page = intval($_POST['page']);
 				$html = '';
 
 				if( $page == 0 ):
@@ -2050,7 +2018,6 @@ class SV_Api_Admin {
 		}
 
 		foreach ($cat_array as $catname => $category) {
-    		// error_log(print_r($catname, true));
 
 			$tag = get_term_by('name', $catname, 'post_tag');
 
