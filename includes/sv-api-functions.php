@@ -41,7 +41,7 @@ function create_new_listing($response){
       update_field("amenities", $amenities_string, $pid);
       wp_set_object_terms($pid, $amenities_taxonomies, 'amenities');
 
-      /// add region terms
+      // add region terms
       $region_tax_ids = process_region($standard_fields['region']);
       wp_set_object_terms($pid, $region_tax_ids, 'regions');
 
@@ -650,7 +650,7 @@ function update_event_imgaes($pid, $event, $title, $log_file) {
   $mid = array();
 
   $fill_gallery = false;
-
+  
   if ( !$gallery ) {
     $gallery = [];
     update_field('media', $gallery, $pid);

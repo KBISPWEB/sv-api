@@ -366,8 +366,6 @@ class SV_Api_Loader {
 			$result_info = curl_getinfo($ch);
 			curl_close($ch);
 
-			// echo '<input type="textarea" value="' . htmlspecialchars($result) . '">';
-
 			$result_http_code = $result_info['http_code'];
 
 			$xml = simplexml_load_string($result);
