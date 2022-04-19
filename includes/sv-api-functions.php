@@ -35,12 +35,15 @@ function create_new_listing($response){
       );
       $pid = wp_insert_post($post, true);  // Pass the value of $post to WordPress the insert function
 
-      // populate amenities textarea
+      // populate amenities textarea and add amenities terms
       $tag_to_tab = get_amenities_info();
       [$amenities_string, $amenities_taxonomies] = process_amenities($listing['AMENITIES']['ITEM'], $tag_to_tab);
       update_field("amenities", $amenities_string, $pid);
       wp_set_object_terms($pid, $amenities_taxonomies, 'amenities');
 
+      /// add region terms
+      $region_tax_ids = process_region($standard_fields['region']);
+      wp_set_object_terms($pid, $region_tax_ids, 'regions');
 
       // add post terms
       wp_set_object_terms($pid, $standard_fields['post_cats'], 'category');
@@ -131,13 +134,15 @@ function update_listing($response, $pid) {
       // Get latest modification date
       $post_modified  = $post_data[0]->post_modified;
 
-      // populate amenities textarea
+      // populate amenities textarea and add amenities terms
       $tag_to_tab = get_amenities_info();
       [$amenities_string, $amenities_taxonomies] = process_amenities($listing['AMENITIES']['ITEM'], $tag_to_tab);
       update_field("amenities", $amenities_string, $pid);
       wp_set_object_terms($pid, $amenities_taxonomies, 'amenities');
 
-      // handle amenities texonomy
+      /// add region terms
+      $region_tax_ids = process_region($standard_fields['region']);
+      wp_set_object_terms($pid, $region_tax_ids, 'regions');
 
       // add post terms
       wp_set_object_terms($pid, $standard_fields['post_cats'], 'category');
@@ -431,6 +436,12 @@ function process_amenities($amenities_response, $tag_to_tab) {
       $amenities_string, 
       $amenities_taxonomies
   ];
+}
+
+function process_region($region_name) {
+  $region_slug    = reformCategorySlug($region_name);      
+  $region_cat_id  = addCategory($region_name, $region_slug, '', 'regions');
+  return [$region_cat_id];
 }
 
 function grab_fields($listing){
