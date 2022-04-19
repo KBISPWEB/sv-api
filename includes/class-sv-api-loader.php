@@ -370,10 +370,6 @@ class SV_Api_Loader {
 
 			$result_http_code = $result_info['http_code'];
 
-			// error_log(print_r($api_url, true));
-			// error_log(print_r($data, true));
-			// error_log(print_r($result, true));
-
 			$xml = simplexml_load_string($result);
 			if ($xml === false){
 				update_option( 'sv_api_failure_message', 'Api did not return XML' );

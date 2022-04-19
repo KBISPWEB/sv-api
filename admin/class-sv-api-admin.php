@@ -2275,13 +2275,8 @@ UPDATES
 
 	public function kill_cron() {
 		// if the cron is in the middle of running, setting this will terminate the job
-
-		// error_log(print_r("SET KILL", true));
-		// error_log(print_r("KILL THE PID: ".get_option('sv_api_kill_cron'), true));
-
+		
 		$kill_return = posix_kill ( intval( get_option('sv_api_kill_cron') ) , SIGKILL );
-
-		// error_log(print_r("Return: ".$kill_return, true));
 
 		$data = (object)[
 			"cronKilled" => true

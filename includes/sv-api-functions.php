@@ -427,9 +427,6 @@ function process_amenities($amenities_response, $tag_to_tab) {
     }
   }
 
-  error_log(print_r($amenities_string, true));
-  error_log(print_r($amenities_taxonomies, true));
-
   return [
       $amenities_string, 
       $amenities_taxonomies
@@ -585,8 +582,6 @@ function create_new_event($event, $log_file) {
   $description						= isset($event->DESCRIPTION) ? $event->DESCRIPTION : '';
   $title 									= isset($event->TITLE) ? $event->TITLE : '';
 
-  // error_log(print_r("Create New. Title: ".$title, true));
-
   if ($title) {
     
     // Create the event post
@@ -599,12 +594,9 @@ function create_new_event($event, $log_file) {
     );
     $pid = wp_insert_post($post, true);  // Pass the value of $post to WordPress the insert function
 
-    // error_log(print_r("Create Event: ".$pid, true));
-
     $fields = grab_event_fields($event);
     update_event_standard_fields($pid, $fields);
     wp_set_post_terms($pid, $fields['post_cats'], 'category');
-    // error_log(print_r("Before Process Events", true));
     process_event_images($pid, $event, $title, $log_file);
 
     return [
@@ -630,9 +622,6 @@ function create_new_event($event, $log_file) {
 
 function update_event_imgaes($pid, $event, $title, $log_file) {
 
-  // error_log(print_r($pid.": ".$title, true));
-  // error_log(print_r($event->IMAGES, true));
-
   $image_list =  array();
 
   if ( isset($event->IMAGES) ) {
@@ -643,8 +632,6 @@ function update_event_imgaes($pid, $event, $title, $log_file) {
     }
   }
 
-  // error_log(print_r($image_list, true));
-
   $thumbnail_id = get_post_thumbnail_id($pid);
   $gallery = get_field('media', $pid);
   
@@ -653,11 +640,7 @@ function update_event_imgaes($pid, $event, $title, $log_file) {
 
   $fill_gallery = false;
 
-  // error_log(print_r("Gallery: ", true));
-  // error_log(print_r($gallery, true));
-  
   if ( !$gallery ) {
-    // error_log(print_r("Wipe Gallery...", true));
     $gallery = [];
     update_field('media', $gallery, $pid);
   }
@@ -696,8 +679,6 @@ function update_event_imgaes($pid, $event, $title, $log_file) {
     // file_put_contents( $log_file, "Post ID: ".$pid.PHP_EOL, FILE_APPEND);
     // file_put_contents( $log_file, "Media ID: ".$gallery[0].PHP_EOL, FILE_APPEND);
 
-    // error_log(print_r($gallery, true));
-
     if ( isset($gallery) ) {
       if ( isset($gallery[0]) ) {
         if (!is_wp_error($gallery[0])) {
@@ -729,8 +710,6 @@ function process_event_images($pid, $event, $title, $log_file) {
     }
   }
 
-  // error_log(print_r($image_list, true));
-
   $added_featured = false;
   $mid = array();
   foreach ($image_list as $image_url) {
@@ -738,8 +717,6 @@ function process_event_images($pid, $event, $title, $log_file) {
     $id = saveImageToWP($image_url, $pid, $title, "_events");
 
     if ($id) {
-
-      // error_log(print_r("Image Uploded: ".$id, true));
 
       if (!$added_featured && !is_wp_error($id) ) { // set first image to be thumbnail
 
@@ -752,7 +729,6 @@ function process_event_images($pid, $event, $title, $log_file) {
       array_push($mid, $id);
     }
     else {
-      // error_log(print_r("Image Upload Error: ".$image_url, true));
       file_put_contents( $log_file, "Image Upload Error: ".$image_url.PHP_EOL, FILE_APPEND );
     }
   }
