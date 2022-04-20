@@ -27,7 +27,7 @@ function create_new_listing($response){
 
       // Create the post
       $post = array(
-        'post_title'    => $standard_fields['sort_company'],
+        'post_title'    => $company,
         'post_author'   => 1,
         'post_content'  => $standard_fields['description'],
         'post_status'   => 'publish',
@@ -161,7 +161,7 @@ function update_listing($response, $pid) {
         $time = current_time('mysql');
         $post_updates = array(
           'ID'            => $pid,
-          'post_title'    => $standard_fields['sort_company'],
+          'post_title'    => $company,
           'post_content'  => $standard_fields['description'],
           'post_modified'     => $time,
           'post_modified_gmt' => get_gmt_from_date( $time ),
