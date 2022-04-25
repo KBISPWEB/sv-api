@@ -523,7 +523,38 @@ function grab_fields($listing){
       $subcategory            = addCategory($subcat_name, $subcat_slug, $category);
     endif;
 
+    $additional_subcats = array();
+    if (isset($listing['ADDITIONALSUBCATS']['ITEM']) ){
+
+      if (isset( $listing['ADDITIONALSUBCATS']['ITEM'][0] )) {
+        foreach ($listing['ADDITIONALSUBCATS']['ITEM'] as $subcat_array) {
+
+          $subcat_name            = $subcat_array['SUBCATNAME'];
+          if( $subcat_name != ''):
+            $subcat_slug            = reformCategorySlug($subcat_name);
+            $subcategory            = addCategory($subcat_name, $subcat_slug, $category);
+          endif;
+
+          array_push($additional_subcats, intval($subcategory));
+        }
+      }
+      else {
+
+        $subcat_name              = $listing['ADDITIONALSUBCATS']['ITEM']['SUBCATNAME'];
+        if( $subcat_name != ''):
+          $subcat_slug            = reformCategorySlug($subcat_name);
+          $subcategory            = addCategory($subcat_name, $subcat_slug, $category);
+        endif;
+        array_push($additional_subcats, intval($subcategory));
+      }
+    }
+    
     array_push($post_cats, intval($category), intval($subcategory) );
+
+    foreach ($additional_subcats as $additional_subcat) {
+      array_push($post_cats, intval($additional_subcat));
+    }
+
 
   $fields = array();
   $fields['listing_id'] = $listing['LISTINGID'];
