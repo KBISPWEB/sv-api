@@ -1158,7 +1158,8 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
 
       // Add new listings (only add type of website)
       if( !in_array($svid, $existing_listing_ids) 
-        && !in_array($company, $existing_companies) && ($type_name == "Website") ){
+        // && !in_array($company, $existing_companies) 
+        && ($type_name == "Website") ){
 
         array_push($existing_listing_ids, $svid);
         array_push($existing_companies, $company);
@@ -1187,8 +1188,8 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
           ];
         }
       }
-      // Listing ID exists, check last_updated & update if needed
-      elseif( in_array($svid, $existing_listing_ids) ) {
+      // Listing ID exists, update it
+      elseif( in_array($svid, $existing_listing_ids) && ($type_name == "Website") ) {
 
         $post_data = get_posts( [
           'post_type' => 'listings',
@@ -1203,6 +1204,7 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
           $svid = intval(get_field("listing_id", $the_pid));
 
           $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $svid);
+
           $update_listing_result = update_listing($SV_API_RESPONSE, $the_pid);
 
           $return_status = $update_listing_result[0];

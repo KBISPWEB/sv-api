@@ -2225,6 +2225,7 @@ UPDATES
 				$query_response = new WP_Query($query_options);
 
 				if ( count($query_response->posts) ) { //post has been found
+
 					$the_pid = $query_response->posts[0];
 					$data->postFound = true;
 					$data->pid = $the_pid;
@@ -2232,6 +2233,7 @@ UPDATES
 					$data->svid = intval(get_field("listing_id", $the_pid));
 
 					$SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $data->svid);
+
 					$update_listing_result = update_listing($SV_API_RESPONSE, $the_pid);
 
 					$data->status = $update_listing_result[0];
