@@ -872,6 +872,15 @@ function grab_event_fields($event) {
     }
   }
 
+  foreach ($event->EVENTCATEGORIES as $wrapper) {
+    foreach ($wrapper['EVENTCATEGORY'] as $category) {
+      $cat_name 							= $category['CATEGORYNAME'];
+      $cat_slug								= reformCategorySlug($cat_name);
+      $category 							= addCategory($cat_name, $cat_slug);
+      array_push( $post_cats, $category );
+    }
+  }
+
   $fields['post_cats'] = $post_cats;
   $fields['category'] = $category ?? '';
 
