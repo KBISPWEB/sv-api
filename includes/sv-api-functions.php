@@ -791,14 +791,17 @@ function grab_event_fields($event) {
   // handle $eventdates
   $eventid                = $event->EVENTID;
 
-  // TODO: solve this
-  $eventdates_array     	= array();
-  $eventdates             = '';
-  // $event_eventdates  			= $event->eventdates;
-  // foreach ($event_eventdates as $eventdate):
-  //   array_push($eventdates_array, strval($eventdate->eventdate) );
-  // endforeach;
-  // $eventdates 						= implode(",", $eventdates_array);
+  $eventString = '';
+  foreach ($event->EVENTDATES as $eventsDateContainer) {
+    foreach( $eventsDateContainer['EVENTDATE'] as $date) {
+      $eventString .= $date.',';
+    }
+  }
+
+  $eventString = rtrim($eventString, ",");
+
+
+  $eventdates 						= $eventString;
 
   $eventregion 						= '';
   $eventtype 							= isset($event->EVENTTYPE) ? $event->EVENTTYPE : '';
@@ -970,6 +973,7 @@ function getLogFile($log_options, $logType) {
   $log_id = date("Ymd");
   $log_folder = $log_options[$logType.'_import_folder'];
 	$log_file = $log_folder.$log_id.'_'.$logType.'_cron.log';
+
   return $log_file;
 }
 
@@ -1084,7 +1088,7 @@ function process_events($type = 'manual') {
   foreach($events as $eventArray):
     
     $event = (object) $eventArray;
-    
+
     $processed_count++;
     
     $eventid  = !empty( strval($event->EVENTID) ) ? strval($event->EVENTID) : '';
