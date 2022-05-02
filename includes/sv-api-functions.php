@@ -1,7 +1,7 @@
 <?php
 
 
-function create_new_listing($response){
+function create_new_listing($response, $isFeatured = false, $dtnTab = []){
   if ($response['REQUESTSTATUS']['HASERRORS']) {
     return [
       false, // status
@@ -51,6 +51,10 @@ function create_new_listing($response){
       // populate the post meta data
       update_standard_fields($pid, $standard_fields);
 
+      if ($isFeatured) {
+        update_field('featured', $isFeatured, $pid);
+      }
+
       if ( strtolower($standard_fields['rank']) === "premium" ) {
         update_premium_meta($pid, $listing);
       }
@@ -85,7 +89,7 @@ function create_new_listing($response){
   ];
 }
 
-function update_listing($response, $pid) {
+function update_listing($response, $pid, $isFeatured = false, $dtnTab = []) {
   $listing                  = $response['LISTING'];
 
   $images_response          = isset( $listing['IMAGES']['ITEM'] ) ? $listing['IMAGES']['ITEM'] : false;
@@ -169,6 +173,46 @@ function update_listing($response, $pid) {
         $pid = wp_update_post($post_updates, true);
 
         update_standard_fields($pid, $standard_fields);
+
+        if ($isFeatured) {
+          update_field('featured', $isFeatured, $pid);
+          
+          $post_cats                 = array();
+          $dtnCats                   = $dtnTab['CATS']['ITEM'];
+          if ( isset($dtnCats['CATNAME']) ) { // Single Cat
+            $cat_name               = $dtnCats['CATNAME'];
+            $cat_slug               = reformCategorySlug($cat_name);
+            $category               = addCategory($cat_name, $cat_slug);
+            $post_cats[]            = $category;
+          }
+          else {
+            foreach ($dtnCats as $cat) {
+              $cat_name               = $cat['CATNAME'];
+              $cat_slug               = reformCategorySlug($cat_name);
+              $category               = addCategory($cat_name, $cat_slug);
+              $post_cats[]            = $category;
+            }
+          }
+
+          $dtnSubCats                   = $dtnTab['SUBCATS']['ITEM'];
+          if ( isset($dtnSubCats['SUBCATNAME']) ) { // Single Cat
+            $cat_name               = $dtnSubCats['SUBCATNAME'];
+            $cat_slug               = reformCategorySlug($cat_name);
+            $category               = addCategory($cat_name, $cat_slug);
+            $post_cats[]            = $category;
+          }
+          else {
+            foreach ($dtnSubCats as $subCat) {
+              $cat_name               = $subCat['SUBCATNAME'];
+              $cat_slug               = reformCategorySlug($cat_name);
+              $category               = addCategory($cat_name, $cat_slug);
+              $post_cats[]            = $category;
+            }
+          }
+
+          wp_set_post_terms($pid, $post_cats, 'category');
+
+        }
 
         return [
           true,
@@ -698,9 +742,6 @@ function update_event_imgaes($pid, $event, $title, $log_file) {
         
         if (!$thumbnail_id && !$added_featured ) { // set first image to be thumbnail
           if ( wp_get_attachment_image_src($id) ) {
-            // file_put_contents( $log_file, "Update, Gallery is Empty.".PHP_EOL, FILE_APPEND);
-            // file_put_contents( $log_file, "Post ID: ".$pid.PHP_EOL, FILE_APPEND);
-            // file_put_contents( $log_file, "Media ID: ".$id.PHP_EOL, FILE_APPEND);
             set_post_thumbnail($pid, $id);
             $added_featured = true;
           }
@@ -717,10 +758,6 @@ function update_event_imgaes($pid, $event, $title, $log_file) {
   }
   // TODo: why is this a problem
   elseif (!$thumbnail_id) { // we have to replace the thumbnail from the gallery
-    // file_put_contents( $log_file, "Update, Gallery Full, No Thumbnail".PHP_EOL, FILE_APPEND);
-    // file_put_contents( $log_file, "Post ID: ".$pid.PHP_EOL, FILE_APPEND);
-    // file_put_contents( $log_file, "Media ID: ".$gallery[0].PHP_EOL, FILE_APPEND);
-
     if ( isset($gallery) ) {
       if ( isset($gallery[0]) ) {
         if (!is_wp_error($gallery[0])) {
@@ -755,6 +792,8 @@ function process_event_images($pid, $event, $title, $log_file) {
   $added_featured = false;
   $mid = array();
   foreach ($image_list as $image_url) {
+
+    file_put_contents( $log_file, "Image URL: ".$image_url.PHP_EOL, FILE_APPEND );
   
     $id = saveImageToWP($image_url, $pid, $title, "_events");
 
@@ -799,7 +838,6 @@ function grab_event_fields($event) {
   }
 
   $eventString = rtrim($eventString, ",");
-
 
   $eventdates 						= $eventString;
 
@@ -1008,18 +1046,7 @@ function createLog($log_options, $logType = 'listings', $cronJob, $api_results_n
 
 
 	$log_success = file_put_contents($log_file, $log, FILE_APPEND);
-
-  // if ($log_success) {
-  //   update_option( 'sv_api_last_'.$logType.'_import_log', $log_file );
-    
-  //   $logClearedReturn = clearOldLog($log_folder);
-    
-  //   $logClearedMessage = $logClearedReturn.PHP_EOL.
-  //                        "--------------------------------------------------".PHP_EOL;
-    
-  //   file_put_contents ($log_file, $logClearedMessage, FILE_APPEND);
-  // }
-
+  
   return [
     $log_success,
     $log_folder,
@@ -1084,7 +1111,6 @@ function process_events($type = 'manual') {
   $existing_event_ids = existing_event_ids();
   $processed_events = array();
 
-
   foreach($events as $eventArray):
     
     $event = (object) $eventArray;
@@ -1093,7 +1119,7 @@ function process_events($type = 'manual') {
     
     $eventid  = !empty( strval($event->EVENTID) ) ? strval($event->EVENTID) : '';
     $eventTitle    = isset($event->TITLE) ? $event->TITLE : '';
-
+    
     file_put_contents( $log_file, "Processing...".PHP_EOL."Post ID: ".$eventid.PHP_EOL, FILE_APPEND);
     file_put_contents( $log_file, "Event Title: ".$eventTitle.PHP_EOL, FILE_APPEND);
 
@@ -1167,6 +1193,7 @@ function process_events($type = 'manual') {
       }
 
     endif; // add/update event
+
   endforeach; //$events
 
 
@@ -1195,6 +1222,8 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
     $last_updated 		= $listing['LASTUPDATED'];
     $company         	= !empty( $listing['COMPANY'] ) ? $listing['COMPANY'] : false;
     $sort_company 		= !empty( $listing['SORTCOMPANY'] ) ? $listing['SORTCOMPANY'] : $svid . ' Company Name Missing';
+    $isFeatured       = $listing['DTN']['RANK'] == 1 ? true : false;
+    $dtnTab           = $listing['DTN'];
 
     if ($company) {
 
@@ -1210,7 +1239,7 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
 
         $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $svid);
 
-        $create_new_listing_result = create_new_listing($SV_API_RESPONSE);
+        $create_new_listing_result = create_new_listing($SV_API_RESPONSE, $isFeatured, $dtnTab);
 
         $return_status = $create_new_listing_result[0];
         $return_message = $create_new_listing_result[1];
@@ -1249,7 +1278,7 @@ function process_listings ($listings, $existing_listing_ids, $existing_companies
 
           $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $svid);
 
-          $update_listing_result = update_listing($SV_API_RESPONSE, $the_pid);
+          $update_listing_result = update_listing($SV_API_RESPONSE, $the_pid, $isFeatured, $dtnTab);
 
           $return_status = $update_listing_result[0];
           $return_message = $update_listing_result[1];
