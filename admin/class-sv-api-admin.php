@@ -1933,7 +1933,7 @@ class SV_Api_Admin {
 		while ( is_array($coupons) && !($page > 10) ) {
 
 			$cat_array = array();
-			
+
 			foreach ($coupons as $coupon) {
 
 				$our_listing = new WP_Query(
@@ -2076,10 +2076,12 @@ class SV_Api_Admin {
 
 						// if the post is old, add it to the trash
 						if ( isset( $coupon['enddate'] ) ) {
-							$formatted_date = str_replace('-', '/', $coupon['enddate']);
-
-							if ( strtotime( $formatted_date ) < time() ) {
-								wp_trash_post($pid);
+							if ( $coupon['enddate'] ) {
+								$formatted_date = str_replace('-', '/', $coupon['enddate']);
+								
+								if ( strtotime( $formatted_date ) < time() ) {
+									wp_trash_post($pid);
+								}
 							}
 						}
 
