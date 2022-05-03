@@ -1933,7 +1933,7 @@ class SV_Api_Admin {
 		while ( is_array($coupons) && !($page > 10) ) {
 
 			$cat_array = array();
-
+			
 			foreach ($coupons as $coupon) {
 
 				$our_listing = new WP_Query(
