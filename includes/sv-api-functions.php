@@ -45,16 +45,19 @@ function create_new_listing($response, $isFeatured = NULL, $dtnTab = []){
       $region_tax_ids = process_region($standard_fields['region']);
       wp_set_object_terms($pid, $region_tax_ids, 'regions');
 
+      $dtnCats = [];
+      if (!is_null($isFeatured)) {
+        update_field('featured', $isFeatured, $pid);
+        $dtnCats = handle_dtn_cats($dtnTab, $pid);
+      }
+
+      $combined_post_cats = array_merge($dtnCats, $standard_fields['post_cats']);
+
       // add post terms
-      wp_set_object_terms($pid, $standard_fields['post_cats'], 'category');
+      wp_set_object_terms($pid, $combined_post_cats, 'category');
 
       // populate the post meta data
       update_standard_fields($pid, $standard_fields);
-
-      if (!is_null($isFeatured)) {
-        update_field('featured', $isFeatured, $pid);
-        handle_dtn_cats($dtnTab, $pid);
-      }
 
       if ( strtolower($standard_fields['rank']) === "premium" ) {
         update_premium_meta($pid, $listing);
@@ -149,8 +152,16 @@ function update_listing($response, $pid, $isFeatured = NULL, $dtnTab = []) {
       $region_tax_ids = process_region($standard_fields['region']);
       wp_set_object_terms($pid, $region_tax_ids, 'regions');
 
+      $dtnCats = [];
+      if (!is_null($isFeatured)) {
+        update_field('featured', $isFeatured, $pid);
+        $dtnCats = handle_dtn_cats($dtnTab, $pid);
+      }
+
+      $combined_post_cats = array_merge($dtnCats, $standard_fields['post_cats']);
+
       // add post terms
-      wp_set_object_terms($pid, $standard_fields['post_cats'], 'category');
+      wp_set_object_terms($pid, $combined_post_cats, 'category');
 
       if ( strtolower($standard_fields['rank']) === "premium" ) {
         update_premium_meta($pid, $listing);
@@ -174,11 +185,6 @@ function update_listing($response, $pid, $isFeatured = NULL, $dtnTab = []) {
         $pid = wp_update_post($post_updates, true);
 
         update_standard_fields($pid, $standard_fields);
-
-        if (!is_null($isFeatured)) {
-          update_field('featured', $isFeatured, $pid);
-          handle_dtn_cats($dtnTab, $pid);
-        }
 
         return [
           true,
@@ -212,39 +218,42 @@ function update_listing($response, $pid, $isFeatured = NULL, $dtnTab = []) {
 
 function handle_dtn_cats($dtnTab, $pid) {
   $post_cats                 = array();
-  $dtnCats                   = $dtnTab['CATS']['ITEM'];
-  if ( isset($dtnCats['CATNAME']) ) { // Single Cat
-    $cat_name               = $dtnCats['CATNAME'];
-    $cat_slug               = reformCategorySlug($cat_name);
-    $category               = addCategory($cat_name, $cat_slug);
-    $post_cats[]            = $category;
-  }
-  else {
-    foreach ($dtnCats as $cat) {
-      $cat_name               = $cat['CATNAME'];
+  if (isset($dtnTab['CATS']['ITEM'])) {
+    $dtnCats                   = $dtnTab['CATS']['ITEM'];
+    if ( isset($dtnCats['CATNAME']) ) { // Single Cat
+      $cat_name               = $dtnCats['CATNAME'];
       $cat_slug               = reformCategorySlug($cat_name);
       $category               = addCategory($cat_name, $cat_slug);
       $post_cats[]            = $category;
     }
-  }
+    else {
+      foreach ($dtnCats as $cat) {
+        $cat_name               = $cat['CATNAME'];
+        $cat_slug               = reformCategorySlug($cat_name);
+        $category               = addCategory($cat_name, $cat_slug);
+        $post_cats[]            = $category;
+      }
+    }
 
-  $dtnSubCats                   = $dtnTab['SUBCATS']['ITEM'];
-  if ( isset($dtnSubCats['SUBCATNAME']) ) { // Single Cat
-    $cat_name               = $dtnSubCats['SUBCATNAME'];
-    $cat_slug               = reformCategorySlug($cat_name);
-    $category               = addCategory($cat_name, $cat_slug);
-    $post_cats[]            = $category;
-  }
-  else {
-    foreach ($dtnSubCats as $subCat) {
-      $cat_name               = $subCat['SUBCATNAME'];
-      $cat_slug               = reformCategorySlug($cat_name);
-      $category               = addCategory($cat_name, $cat_slug);
-      $post_cats[]            = $category;
+    if (isset($dtnTab['SUBCATS']['ITEM'])) {
+      $dtnSubCats                   = $dtnTab['SUBCATS']['ITEM'];
+      if ( isset($dtnSubCats['SUBCATNAME']) ) { // Single Cat
+        $cat_name               = $dtnSubCats['SUBCATNAME'];
+        $cat_slug               = reformCategorySlug($cat_name);
+        $category               = addCategory($cat_name, $cat_slug);
+        $post_cats[]            = $category;
+      }
+      else {
+        foreach ($dtnSubCats as $subCat) {
+          $cat_name               = $subCat['SUBCATNAME'];
+          $cat_slug               = reformCategorySlug($cat_name);
+          $category               = addCategory($cat_name, $cat_slug);
+          $post_cats[]            = $category;
+        }
+      }
     }
   }
-
-  wp_set_post_terms($pid, $post_cats, 'category');
+  return $post_cats;
 }
 
 function update_standard_fields($pid, $standard_fields) {
@@ -567,8 +576,10 @@ function grab_fields($listing){
     $subcat_name            = !empty( $listing['SUBCATNAME'] ) ? $listing['SUBCATNAME'] : '';
     if( $subcat_name != ''):
       $subcat_slug            = reformCategorySlug($subcat_name);
+      // addCategory won't add parent cat if category and subcat are the same
       $subcategory            = addCategory($subcat_name, $subcat_slug, $category);
     endif;
+
 
     $additional_subcats = array();
     if (isset($listing['ADDITIONALSUBCATS']['ITEM']) ){
@@ -578,7 +589,12 @@ function grab_fields($listing){
 
           $subcat_name            = $subcat_array['SUBCATNAME'];
           if( $subcat_name != ''):
+            $cat_name               = $subcat_array['CATNAME'];
+            $cat_slug               = reformCategorySlug($cat_name);
+            $category               = addCategory($cat_name, $cat_slug);
+
             $subcat_slug            = reformCategorySlug($subcat_name);
+            // addCategory won't add parent cat if category and subcat are the same
             $subcategory            = addCategory($subcat_name, $subcat_slug, $category);
           endif;
 
@@ -589,6 +605,10 @@ function grab_fields($listing){
 
         $subcat_name              = $listing['ADDITIONALSUBCATS']['ITEM']['SUBCATNAME'];
         if( $subcat_name != ''):
+          $cat_name               = $listing['ADDITIONALSUBCATS']['ITEM']['CATNAME'];
+          $cat_slug               = reformCategorySlug($cat_name);
+          $category               = addCategory($cat_name, $cat_slug);
+
           $subcat_slug            = reformCategorySlug($subcat_name);
           $subcategory            = addCategory($subcat_name, $subcat_slug, $category);
         endif;
@@ -671,7 +691,6 @@ function create_new_event($event, $log_file) {
   $description						= isset($event->DESCRIPTION) ? $event->DESCRIPTION : '';
   $title 									= isset($event->TITLE) ? $event->TITLE : '';
 
-  file_put_contents( $log_file, "Inside Create New Event.".PHP_EOL, FILE_APPEND);
 
   if ($title) {
     
@@ -685,17 +704,12 @@ function create_new_event($event, $log_file) {
     );
     $pid = wp_insert_post($post, true);  // Pass the value of $post to WordPress the insert function
 
-    file_put_contents( $log_file, "Before Grab Fields.".PHP_EOL, FILE_APPEND);
 
     $fields = grab_event_fields($event);
-    file_put_contents( $log_file, "Before Update Fields.".PHP_EOL, FILE_APPEND);
     update_event_standard_fields($pid, $fields);
-    file_put_contents( $log_file, "Before Set Post Terms.".PHP_EOL, FILE_APPEND);
     wp_set_post_terms($pid, $fields['post_cats'], 'category');
     file_put_contents( $log_file, "Before Process Images.".PHP_EOL, FILE_APPEND);
     process_event_images($pid, $event, $title, $log_file);
-
-    file_put_contents( $log_file, "Before Return.".PHP_EOL, FILE_APPEND);
 
     return [
       true,
@@ -1110,8 +1124,6 @@ function process_events($type = 'manual') {
   update_option( 'sv_api_events_errors', 0 );
   update_option( 'sv_api_events_added', 0 );
 
-  error_log(print_r("before api connect", true));
-
   $events = sv_events_api_connection();
   // return $events;
   if($events == 'error'):
@@ -1124,10 +1136,6 @@ function process_events($type = 'manual') {
   $added_count   	  = 0;
 
   $log_options = get_option( 'sv_api_logs' );
-
-  error_log(print_r($log_options, true));
-
-  error_log(print_r("before create log", true));
 
   [$log_success, $log_folder, $log_file] = createLog($log_options, 'events', true, count($events) );
 
@@ -1142,8 +1150,6 @@ function process_events($type = 'manual') {
     
     $eventid  = !empty( strval($event->EVENTID) ) ? strval($event->EVENTID) : '';
     $eventTitle    = isset($event->TITLE) ? $event->TITLE : '';
-
-    error_log(print_r($eventTitle, true));
     
     file_put_contents( $log_file, "Processing...".PHP_EOL."Post ID: ".$eventid.PHP_EOL, FILE_APPEND);
     file_put_contents( $log_file, "Event Title: ".$eventTitle.PHP_EOL, FILE_APPEND);
@@ -1151,14 +1157,10 @@ function process_events($type = 'manual') {
     // Add new event
     if( !in_array($eventid, $existing_event_ids) ):
 
-      error_log(print_r("New Event", true));
-
       file_put_contents( $log_file, "Create New Event.".PHP_EOL, FILE_APPEND);
 
       array_push($existing_event_ids, $eventid);
       $create_new_event_result = create_new_event($event, $log_file);
-
-      error_log(print_r($create_new_event_result, true));
 
       if ($create_new_event_result[0]) {
         $added_count++;
@@ -1187,8 +1189,6 @@ function process_events($type = 'manual') {
 
       file_put_contents( $log_file, "Update Event.".PHP_EOL, FILE_APPEND);
 
-      error_log(print_r("Update Event", true));
-
       $existant_event = get_posts( [
         'post_type' => 'events',
         'meta_key'   => 'eventid',
@@ -1197,14 +1197,9 @@ function process_events($type = 'manual') {
         'fields' => 'ids'
       ] );
 
-      error_log(print_r("Event ID: ".$eventid, true));
-      error_log(print_r($existant_event, true));
-
       if ($existant_event[0]) {
         
         $update_event_result = update_event($event, $existant_event[0], $log_file);
-
-        error_log(print_r($update_event_result, true));
         
         if ($update_event_result[0]) {
           $updated_count++;
@@ -1229,8 +1224,6 @@ function process_events($type = 'manual') {
       }
 
     endif; // add/update event
-
-    error_log(print_r("========== END ==========", true));
 
   endforeach; //$events
 
