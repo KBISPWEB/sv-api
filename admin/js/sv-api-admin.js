@@ -30,8 +30,10 @@
 	 */
 
 	let page = null;
+	let eventsPage = null;
 	let isTriggered = null;
 	let hasMore = false;
+	let eventsHasMore = false;
 
 	$(function() {
 	 	$("#submit.run_now").click(function(e){
@@ -69,12 +71,32 @@
 			e.preventDefault()
 			$(this).prop('disabled', true)
 			$('.events-table').hide()
-			$('.run_import_event_status').addClass('content').html('<span class="events_import_msg">Running Events Import. Please <strong>DO NOT</strong> leave this screen. Page will reload when finished</span>...')
+			$('.run_import_event_status').addClass('content').html('<span class="events_import_msg">Running Events Import. Please <strong>DO NOT</strong> leave this screen. Page will reload when finished</span>... <span class="eventPercentStatus">0%</span>')
 
+			eventsPage = 0
 			isTriggered = true
+			eventsHasMore = false
 
 			run_events_import()
 		});
+
+		if( $('.run_import_event_status').length ){
+			// The node to be monitored
+			let target = document.querySelector('.run_import_event_status')
+
+			// Create an observer instance
+			let observer = new MutationObserver(function(mutations) {
+			  // console.log($('mydiv').text());
+				if(eventsHasMore === true) {
+					run_events_import()
+				}
+			});
+
+			let config = { attributes: true, childList: true, characterData: true }
+
+			// Pass in the target node, as well as the observer options
+			observer.observe(target, config)
+		}
 
 		$("#submit_coupons.run_now_coupons").click(function(e){
 			e.preventDefault()
@@ -151,7 +173,6 @@
 			url: ajax_object.ajax_url,
 			data: str,
 			success: function(data){
-				console.log(data)
 				hasMore = data.hasMore
 				page = data.page
 
@@ -172,6 +193,7 @@
 	function run_events_import(){
 		let str = {
 			'action': 'run_events_import',
+			'page': eventsPage,
 			'is_triggered': isTriggered
 		};
 
@@ -181,8 +203,16 @@
 			url: ajax_object.ajax_url,
 			data: str,
 			success: function(data){
-				$('.run_import_event_status').append('<br />Events Import Completed! Please wait 10 seconds while the page reloads....')
-				setTimeout( reloadpage, 10000 )
+				eventsHasMore = data.hasMore
+				eventsPage = data.page
+
+				$('.eventPercentStatus').html(data.percent+'%')
+				$('.run_import_event_status').append(data.logData)
+				if(eventsHasMore == false) {
+					$('.run_import_event_status').append('<br />Events Import Completed! Please wait 10 seconds while the page reloads....')
+					setTimeout( reloadpage, 10000 )
+				}
+
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
 			},
@@ -233,8 +263,6 @@
 			data: str,
 			// add a loader
 			success: function(data){
-				console.log("DATA");
-				console.log(data);
 
 				if (data.postFound === true) { // post exists
 					if (data.status === true) { // success
@@ -298,8 +326,6 @@
 			data: str,
 			// add a loader
 			success: function(data){
-				console.log("DATA");
-				console.log(data);
 				if (data.status === true) {
 					$('.run_import_single_listing_status').append(
 						'<br /><div style="margin-left:5px;" class="success-text">See new listing <a href='

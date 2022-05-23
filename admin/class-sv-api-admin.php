@@ -1916,14 +1916,17 @@ class SV_Api_Admin {
 	} //run_bulk_listings
 
 	public function run_bulk_events_CRON(){
-		process_events('cron');
-	}
+		// TODO: Implement cron update
+		// process_events('cron');
+	} //run_bulk_events_CRON
 
 	public function run_bulk_events(){
+		$page = intval($_POST['page']);
 		if ( isset($_POST['is_triggered']) && $_POST['is_triggered'] == 'true' ):
-			process_events('manual');
+			$data = process_events($page, 'manual');
+			wp_send_json($data);
 		endif; 
-	}
+	} //run_bulk_events
 
 	public function run_bulk_coupons() {
 		$page = 0;

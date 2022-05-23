@@ -1115,14 +1115,19 @@ function addPagedFailMessageToLog($log_file, $page) {
 
 }
 
-function process_events($type = 'manual') {
-  update_option( 'sv_api_last_run_events', date("F j, Y, g:i a") );
-  update_option( 'sv_api_events_failure_message', false );
-  update_option( 'sv_api_event_method', $type );
-  update_option( 'sv_api_events_processed', 0 );
-  update_option( 'sv_api_events_updated',  0 );
-  update_option( 'sv_api_events_errors', 0 );
-  update_option( 'sv_api_events_added', 0 );
+function process_events($page = 0, $type = 'manual') {
+
+  $html = '';
+
+  if( $page == 0 ):
+    update_option( 'sv_api_last_run_events', date("F j, Y, g:i a") );
+    update_option( 'sv_api_events_failure_message', false );
+    update_option( 'sv_api_event_method', $type );
+    update_option( 'sv_api_events_processed', 0 );
+    update_option( 'sv_api_events_updated',  0 );
+    update_option( 'sv_api_events_errors', 0 );
+    update_option( 'sv_api_events_added', 0 );
+  endif; // page == 0
 
   $events = sv_events_api_connection();
   // return $events;
@@ -1130,83 +1135,56 @@ function process_events($type = 'manual') {
     exit();
   endif;
 
-  $processed_count  = 0;
-  $updated_count 	  = 0;
-  $error_count   	  = 0;
-  $added_count   	  = 0;
+  $processed_count 	= get_option( 'sv_api_events_processed' );
+  $updated_count 	= get_option( 'sv_api_events_updated' );
+  $error_count 	= get_option( 'sv_api_events_errors' );
+  $added_count 	= get_option( 'sv_api_events_added' );
 
   $log_options = get_option( 'sv_api_logs' );
-
-  [$log_success, $log_folder, $log_file] = createLog($log_options, 'events', true, count($events) );
+  if ($page == 0) {
+    [$log_success, $log_folder, $log_file] = createLog($log_options, 'events', true, count($events));
+  }
+  $log_options 	= get_option( 'sv_api_logs' );
+  $log_file 		= getLogFile($log_options, 'events');  
 
   $existing_event_ids = existing_event_ids();
+
   $processed_events = array();
+  $api_pagesize = 10;
 
-  foreach($events as $eventArray):
+  $firstCondition = ($page+1)*$api_pagesize;
+  $secondCondition = $page*$api_pagesize;
+
+  foreach($events as $index => $eventArray):
+
+    if ($index < $firstCondition && $index >= $secondCondition):
+
+      // error_log(print_r("Index: ".$index, true));
+      // error_log(print_r("Processing...", true));
     
-    $event = (object) $eventArray;
+      $event = (object) $eventArray;
 
-    $processed_count++;
-    
-    $eventid  = !empty( strval($event->EVENTID) ) ? strval($event->EVENTID) : '';
-    $eventTitle    = isset($event->TITLE) ? $event->TITLE : '';
-    
-    file_put_contents( $log_file, "Processing...".PHP_EOL."Post ID: ".$eventid.PHP_EOL, FILE_APPEND);
-    file_put_contents( $log_file, "Event Title: ".$eventTitle.PHP_EOL, FILE_APPEND);
+      $processed_count++;
+      
+      $eventid  = !empty( strval($event->EVENTID) ) ? strval($event->EVENTID) : '';
+      $eventTitle    = isset($event->TITLE) ? $event->TITLE : '';
+      
+      file_put_contents( $log_file, "Processing...".PHP_EOL."Post ID: ".$eventid.PHP_EOL, FILE_APPEND);
+      file_put_contents( $log_file, "Event Title: ".$eventTitle.PHP_EOL, FILE_APPEND);
 
-    // Add new event
-    if( !in_array($eventid, $existing_event_ids) ):
+      // Add new event
+      if( !in_array($eventid, $existing_event_ids) ):
 
-      file_put_contents( $log_file, "Create New Event.".PHP_EOL, FILE_APPEND);
+        file_put_contents( $log_file, "Create New Event.".PHP_EOL, FILE_APPEND);
 
-      array_push($existing_event_ids, $eventid);
-      $create_new_event_result = create_new_event($event, $log_file);
+        array_push($existing_event_ids, $eventid);
+        $create_new_event_result = create_new_event($event, $log_file);
 
-      if ($create_new_event_result[0]) {
-        $added_count++;
+        if ($create_new_event_result[0]) {
+          $added_count++;
 
-        $return_pid = $create_new_event_result[3];
-        $return_message = $create_new_event_result[1];
-
-        $processed_events[$return_pid] = [
-          $event->TITLE,
-          $return_message
-        ];
-      }
-      else {
-
-        $error_count++;
-        
-        $return_message = $create_new_event_result[1];
-
-        $processed_events[$eventid] = [
-          $event->TITLE,
-          $return_message
-        ];
-      }
-
-    else :
-
-      file_put_contents( $log_file, "Update Event.".PHP_EOL, FILE_APPEND);
-
-      $existant_event = get_posts( [
-        'post_type' => 'events',
-        'meta_key'   => 'eventid',
-        'meta_value' => $eventid,
-        'posts_per_page' => 1,
-        'fields' => 'ids'
-      ] );
-
-      if ($existant_event[0]) {
-        
-        $update_event_result = update_event($event, $existant_event[0], $log_file);
-        
-        if ($update_event_result[0]) {
-          $updated_count++;
-
-          $return_pid = $update_event_result[3];
-          $return_message = $update_event_result[1];
-
+          $return_pid = $create_new_event_result[3];
+          $return_message = $create_new_event_result[1];
 
           $processed_events[$return_pid] = [
             $event->TITLE,
@@ -1214,16 +1192,58 @@ function process_events($type = 'manual') {
           ];
         }
         else {
+
           $error_count++;
+          
+          $return_message = $create_new_event_result[1];
+
           $processed_events[$eventid] = [
             $event->TITLE,
-            "Failed to update event. PID: ".$existant_event[0]
+            $return_message
           ];
         }
 
-      }
+      else :
 
-    endif; // add/update event
+        file_put_contents( $log_file, "Update Event.".PHP_EOL, FILE_APPEND);
+
+        $existant_event = get_posts( [
+          'post_type' => 'events',
+          'meta_key'   => 'eventid',
+          'meta_value' => $eventid,
+          'posts_per_page' => 1,
+          'fields' => 'ids'
+        ] );
+
+        if ($existant_event[0]) {
+          
+          $update_event_result = update_event($event, $existant_event[0], $log_file);
+          
+          if ($update_event_result[0]) {
+            $updated_count++;
+
+            $return_pid = $update_event_result[3];
+            $return_message = $update_event_result[1];
+
+
+            $processed_events[$return_pid] = [
+              $event->TITLE,
+              $return_message
+            ];
+          }
+          else {
+            $error_count++;
+            $processed_events[$eventid] = [
+              $event->TITLE,
+              "Failed to update event. PID: ".$existant_event[0]
+            ];
+          }
+
+        }
+
+      endif; // add/update event
+
+    endif; // paging
 
   endforeach; //$events
 
@@ -1234,6 +1254,33 @@ function process_events($type = 'manual') {
   update_option( 'sv_api_events_added', $added_count );
 
   addLogData($log_file, $processed_events);
+
+  $results_count = count($events);
+  update_option( 'sv_api_events_results_count', $results_count );
+
+  // error_log(print_r("Process Count: ".$processed_count, true));
+  // error_log(print_r("Results Count: ".$results_count, true));
+
+  $roughPercent = $processed_count/$results_count;
+  $percentProcessed = number_format((float)$roughPercent, 2, '.', '');
+  $hasMore = $processed_count < $results_count;
+  $num_calls = ceil($results_count / $api_pagesize);
+
+  $page = $page + 1;
+
+  $html .= '<div style="margin-top: 10px; margin-bottom: 10px;">'.
+              'Page '. $page . ' of ' . $num_calls . ' completed...'.
+            '</div>';
+
+   // TODO fill this out
+   $data = array(
+     'page'    => $page,
+     'percent' => $percentProcessed,
+     'hasMore' => $hasMore,
+     'logData' => $html
+  );
+  
+  return $data;
 }
 
 function process_listings ($listings, $existing_listing_ids, $existing_companies) {
