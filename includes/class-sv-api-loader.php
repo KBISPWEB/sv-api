@@ -532,84 +532,77 @@ class SV_Api_Loader {
 			update_post_meta($pid, 'media', $mid);
 		} // handle_images
 
-		function BW_upload_images($pid = null, $images = null, $premium_images = null) {
-			if($pid):
+        function BW_upload_images($pid = null, $images = null, $premium_images = null) {
+            if ( !$pid ) {
+                return;
+            }
 
-				$gallery 		= get_post_meta($pid, 'media');
-				$gallery_ids 	= isset($gallery[0]) ? $gallery[0] : [];
-				$gallery_sv_ids = array();
+            $gallery 		= get_post_meta($pid, 'media');
+            $gallery_ids 	= $gallery[0] ?? [];
+            $gallery_sv_ids = array();
 
-				foreach ($gallery_ids as $id) {
-					$gallery_sv_ids[] = get_field('simpleview_id', $id);
-				}
+            foreach ($gallery_ids as $id) {
+                $gallery_sv_ids[] = get_field('simpleview_id', $id);
+            }
 
-				$ids_to_apply = array();
+            $ids_to_apply = array();
 
-				$hero_image = false;
-				$backup_hero_image = false;
+            $hero_image = false;
+            $backup_hero_image = false;
 
-				// HANDLE IMAGES
-				if ($images) {
-					foreach ($images as $sv_id => $image) {
-						$id_index = array_search($sv_id, $gallery_sv_ids);
-						if ( in_array($sv_id, $gallery_sv_ids) ) {
-							$id = $gallery_ids[$id_index];
-							$ids_to_apply[] = $id;
-						}
-						else { // this is a new image
-							$id = saveImageToWP($image['URL'], $pid, $image['TITLE']);
-							update_field('simpleview_id', $sv_id, $id);
-							$ids_to_apply[] = $id;
-						}
-						if ($backup_hero_image === false) {
-							$backup_hero_image = $id;
-						}
-					}
-				}
+            // HANDLE IMAGES
+            if ($images) {
+                foreach ($images as $sv_id => $image) {
+                    $id_index = array_search($sv_id, $gallery_sv_ids);
+                    if ( in_array($sv_id, $gallery_sv_ids) ) {
+                        $id = $gallery_ids[$id_index];
+                    } else { // this is a new image
+                        $id = saveImageToWP($image['URL'], $pid, $image['TITLE']);
+                        update_field('simpleview_id', $sv_id, $id);
+                    }
+                    $ids_to_apply[] = $id;
+                    if ($backup_hero_image === false) {
+                        $backup_hero_image = $id;
+                    }
+                }
+            }
 
-				// HANDLE PREMIUM IMAGES
-				if ($premium_images) {
-					foreach ($premium_images as $sv_id => $image) {
-						$id_index = array_search($sv_id, $gallery_sv_ids);
-						if ( in_array($sv_id, $gallery_sv_ids) ) {
-							$id = $gallery_ids[$id_index];
-							$ids_to_apply[] = $id;
-						}
-						else { // this is a new image
-							$id = saveImageToWP($image['URL'], $pid, $image['TITLE']);
-							update_field('simpleview_id', $sv_id, $id);
-							update_post_meta($id, '_wp_attachment_image_alt', $image['DESC']);
-							$ids_to_apply[] = $id;
-						}
-						if ($hero_image === false) {
-							$hero_image = $id;
-						}
-					}
-				}
+            // HANDLE PREMIUM IMAGES
+            if ($premium_images) {
+                foreach ($premium_images as $sv_id => $image) {
+                    $id_index = array_search($sv_id, $gallery_sv_ids);
+                    if ( in_array($sv_id, $gallery_sv_ids) ) {
+                        $id = $gallery_ids[$id_index];
+                    } else { // this is a new image
+                        $id = saveImageToWP($image['URL'], $pid, $image['TITLE']);
+                        update_field('simpleview_id', $sv_id, $id);
+                        update_post_meta($id, '_wp_attachment_image_alt', $image['DESC']);
+                    }
+                    $ids_to_apply[] = $id;
+                    if ($hero_image === false) {
+                        $hero_image = $id;
+                    }
+                }
+            }
 
-				update_post_meta($pid, 'media', $ids_to_apply); 	// add to gallery
+            update_post_meta($pid, 'media', $ids_to_apply); 	// add to gallery
 
+            // Handle post thumbnail
+            $thumbnail_image = null;
+            if ($hero_image) {
+                $thumbnail_image = $hero_image;
+            } elseif ($backup_hero_image) {
+                $thumbnail_image = $backup_hero_image;
+            } elseif (isset($gallery[0][0])) {
+                $thumbnail_image = $gallery[0][0];
+            }
 
-				// HANDLE HERO
-
-				$hero = get_post_meta($pid, 'post_hero_background');
-
-				if( !has_post_thumbnail($pid) ){
-					if ($hero_image !== false) {
-						set_post_thumbnail($pid, $hero_image);
-					}
-					elseif ($backup_hero_image !== false) {
-						set_post_thumbnail($pid, $backup_hero_image);
-					}
-					elseif ( isset($gallery[0][0]) ) { //fallback to 1st gallery
-						if ($gallery[0][0]) {
-							set_post_thumbnail($pid, $gallery[0][0]);
-						}
-					}
-				}
-
-			endif;
-		} // BW_upload_images
+            if ($thumbnail_image) {
+                set_post_thumbnail($pid, $thumbnail_image);
+            } else {
+                delete_post_thumbnail($pid);
+            }
+        }
 
 		function saveImageToWP($image_url = null, $pid = null, $desc = 'null', $append = '') {
 			// Get image from external url and save to Media Library
