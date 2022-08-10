@@ -1818,6 +1818,8 @@ class SV_Api_Admin {
 					update_option( 'sv_api_listings_updated',  0 );
 					update_option( 'sv_api_listings_errors', 0 );
 					update_option( 'sv_api_listings_added', 0 );
+                    // List of listings ids that are processed
+                    update_option('sv_api_listings_ids_processed', []);
 
 					$results_num = sv_api_connection('getListings', 1);
 					$results_count = $results_num['REQUESTSTATUS']['RESULTS'];
@@ -1869,11 +1871,15 @@ class SV_Api_Admin {
 				$updated_count 	= get_option( 'sv_api_listings_updated' );
 				$error_count 	= get_option( 'sv_api_listings_errors' );
 				$added_count 	= get_option( 'sv_api_listings_added' );
+                // List of listings ids that have already been imported
+                $processed_listings_ids = get_option( 'sv_api_listings_ids_processed', [] );
+                $processed_listings_ids = is_array($processed_listings_ids) ? array_merge($processed_listings_ids, array_keys($this_pages_listings)) : array_keys($this_pages_listings);
 
 				update_option( 'sv_api_listings_processed', $process_count + $processed_this_page );
 				update_option( 'sv_api_listings_updated', $updated_count + $updated_this_page );
 				update_option( 'sv_api_listings_errors', $error_count + $errors_this_page );
 				update_option( 'sv_api_listings_added', $added_count + $added_this_page );
+                update_option( 'sv_api_listings_ids_processed', $processed_listings_ids );
 
 				// TODO: make a function to add this front end data
 
@@ -1900,6 +1906,11 @@ class SV_Api_Admin {
 					}
 				}
 
+                // Update listings status
+                if ( !$hasMore ) {
+                    $this->update_absent_listings_status();
+                }
+
 				$data = array(
 				    'page'    => $page,
 				    'num_calls' => $num_calls,
@@ -1914,6 +1925,39 @@ class SV_Api_Admin {
 				wp_send_json($data);
 			endif; // if is_triggered
 	} //run_bulk_listings
+
+    /**
+     * Make listings that are not included in the latest API response as drafts
+     */
+    public function update_absent_listings_status() {
+        // Grabbing all the current listings
+        $existing_listing_ids = get_all_current_listings();
+        // Make it as array of wp IDs
+        $existing_listing_ids = array_map(
+            function($listing) {
+                return $listing->ID;
+            },
+            $existing_listing_ids
+        );
+        // Grab all the listings processed from the last import
+        $processed_listings_ids = get_option('sv_api_listings_ids_processed', []);
+        if (!is_array($processed_listings_ids) || empty($processed_listings_ids)) {
+            return;
+        }
+
+        foreach ($existing_listing_ids as $listing_id) {
+            // If this listing is processed do nothing
+            if (in_array($listing_id, $processed_listings_ids)) {
+                continue;
+            }
+
+            // Otherwise, make it as draft
+            wp_update_post([
+                'ID' => $listing_id,
+                'post_status' => 'draft',
+            ], true);
+        }
+    }
 
 	public function run_bulk_events_CRON(){
 		// TODO: Implement cron update
