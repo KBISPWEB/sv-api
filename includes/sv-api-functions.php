@@ -897,7 +897,7 @@ function grab_event_fields($event) {
   $zip 										= isset($event->ZIP) ? $event->ZIP : '';
 
   $fields = array();
-  $fields['address'] = $address;
+  $fields['address'] = str_replace( [ "\\r\\n", "\\r", "\\n" ], PHP_EOL, $address );
   $fields['admission'] = $admission;
   $fields['city'] = $city;
   $fields['contact'] = $contact;
