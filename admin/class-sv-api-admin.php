@@ -1930,6 +1930,8 @@ class SV_Api_Admin {
      * Make listings that are not included in the latest API response as drafts
      */
     public function update_absent_listings_status() {
+        global $wpdb;
+
         // Grabbing all the current listings
         $existing_listing_ids = get_all_current_listings();
         // Make it as array of wp IDs
@@ -1945,17 +1947,31 @@ class SV_Api_Admin {
             return;
         }
 
+        $active = [];
+        $inactive = [];
         foreach ($existing_listing_ids as $listing_id) {
-            // If this listing is processed do nothing
             if (in_array($listing_id, $processed_listings_ids)) {
-                continue;
+                $active[] = $listing_id;
+            } else {
+                $inactive[] = $listing_id;
             }
+        }
+        $active = implode(',', $active);
+        $inactive = implode(',', $inactive);
 
-            // Otherwise, make it as draft
-            wp_update_post([
-                'ID' => $listing_id,
-                'post_status' => 'draft',
-            ], true);
+        if ($active) {
+            $wpdb->query("
+                UPDATE $wpdb->posts
+                SET post_status = 'publish'
+                WHERE ID IN ($active)
+            ");
+        }
+        if ($inactive) {
+            $wpdb->query("
+                UPDATE $wpdb->posts
+                SET post_status = 'draft'
+                WHERE ID IN ($inactive)
+            ");
         }
     }
 
