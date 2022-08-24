@@ -150,7 +150,7 @@ class SV_Api_Loader {
 
 			$get_existing_listing_ids = new WP_Query(array(
 				'post_type' => 'listings',
-				'post_status' => $post_stati,
+				'post_status' => 'any',
 				'posts_per_page' => -1,
 				'meta_query' => array(
 					array(

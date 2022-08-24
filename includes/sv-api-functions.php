@@ -93,23 +93,31 @@ function create_new_listing($response, $isFeatured = NULL, $dtnTab = []){
   ];
 }
 
-function update_listing($response, $pid, $isFeatured = NULL, $dtnTab = []) {
-  $listing                  = $response['LISTING'];
+function update_listing($response, $pid, $isFeatured = null, $dtnTab = []) {
+    $listing = $response['LISTING'];
 
-  $images_response          = isset( $listing['IMAGES']['ITEM'] ) ? $listing['IMAGES']['ITEM'] : false;
-  $hr_response              = isset( $listing['HIGHRESIMAGE']['ITEM'] ) ? $listing['HIGHRESIMAGE']['ITEM'] : false;
-  $last_updated             = $listing['LASTUPDATED'];
-  $svid                     = $listing['LISTINGID'];
-  $company                  = !empty( $listing['COMPANY'] ) ? $listing['COMPANY'] : false;
+    $images_response = isset($listing['IMAGES']['ITEM']) ? $listing['IMAGES']['ITEM'] : false;
+    $hr_response = isset($listing['HIGHRESIMAGE']['ITEM']) ? $listing['HIGHRESIMAGE']['ITEM'] : false;
+    $last_updated = $listing['LASTUPDATED'];
+    $svid = $listing['LISTINGID'];
+    $company = ! empty($listing['COMPANY']) ? $listing['COMPANY'] : false;
 
-  if ($company) { // if company name missing, abort
+    // if company name missing, abort
+    if (!$company) {
+        return [
+            false,
+            "Listing Not Updated. Company name in SV API Response was empty.",
+            false,
+            false
+        ];
+    }
 
     // TODO: will need to avoid running this each time in bulk update
-    if (!isset($existing_companies)) {
-      $existing_companies = existing_companies();
+    if (! isset($existing_companies)) {
+        $existing_companies = existing_companies();
     }
-    if (!isset($existing_listing_ids)) {
-      $existing_listing_ids = existing_listing_ids();
+    if (! isset($existing_listing_ids)) {
+        $existing_listing_ids = existing_listing_ids();
     }
 
     $standard_fields = grab_fields($listing);
@@ -119,101 +127,91 @@ function update_listing($response, $pid, $isFeatured = NULL, $dtnTab = []) {
 
     $type_name = $listing['TYPENAME'];
 
-    if( in_array($svid, $existing_listing_ids) && ($type_name == "Website") ) {
-      // Get post data
-      $post_data = get_posts( [
-        'post_type' => 'listings',
-        'meta_key'   => 'listing_id',
-        'meta_value' => $svid,
-        'posts_per_page' => 1,
-      ] );
+    if (in_array($svid, $existing_listing_ids) && ($type_name == "Website")) {
+        // Get post data
+        $post_data = get_posts([
+            'post_type' => 'listings',
+            'meta_key' => 'listing_id',
+            'meta_value' => $svid,
+            'posts_per_page' => 1,
+            'post_status' => 'any',
+        ]);
 
 
-      // TODO: Make error
-      if ($pid !== intval($post_data[0]->ID) ) {
-        return [
-          false,
-          "Post ID and SVID do not match. There may be duplicate listings.",
-          false,
-          false
-        ];
-      }
+        // TODO: Make error
+        if ($pid !== intval($post_data[0]->ID)) {
+            $wp_id = $post_data[0]->ID;
+            return [
+                false,
+                "Post ID and SVID do not match. There may be duplicate listings, pid: $pid, wp_id: $wp_id",
+                false,
+                false
+            ];
+        }
 
-      // Get latest modification date
-      $post_modified  = $post_data[0]->post_modified;
+        // Get latest modification date
+        $post_modified = $post_data[0]->post_modified;
 
-      // populate amenities textarea and add amenities terms
-      $tag_to_tab = get_amenities_info();
-      [$amenities_string, $amenities_taxonomies] = process_amenities($listing['AMENITIES']['ITEM'], $tag_to_tab);
-      update_field("amenities", $amenities_string, $pid);
-      wp_set_object_terms($pid, $amenities_taxonomies, 'amenities');
+        // populate amenities textarea and add amenities terms
+        $tag_to_tab = get_amenities_info();
+        [$amenities_string, $amenities_taxonomies] = process_amenities($listing['AMENITIES']['ITEM'], $tag_to_tab);
+        update_field("amenities", $amenities_string, $pid);
+        wp_set_object_terms($pid, $amenities_taxonomies, 'amenities');
 
-      /// add region terms
-      $region_tax_ids = process_region($standard_fields['region']);
-      wp_set_object_terms($pid, $region_tax_ids, 'regions');
+        /// add region terms
+        $region_tax_ids = process_region($standard_fields['region']);
+        wp_set_object_terms($pid, $region_tax_ids, 'regions');
 
-      $dtnCats = [];
-      if (!is_null($isFeatured)) {
-        update_field('featured', $isFeatured, $pid);
-        $dtnCats = handle_dtn_cats($dtnTab, $pid);
-      }
+        $dtnCats = [];
+        if (! is_null($isFeatured)) {
+            update_field('featured', $isFeatured, $pid);
+            $dtnCats = handle_dtn_cats($dtnTab, $pid);
+        }
 
-      $combined_post_cats = array_merge($dtnCats, $standard_fields['post_cats']);
+        $combined_post_cats = array_merge($dtnCats, $standard_fields['post_cats']);
 
-      // add post terms
-      wp_set_object_terms($pid, $combined_post_cats, 'category');
+        // add post terms
+        wp_set_object_terms($pid, $combined_post_cats, 'category');
 
-      if ( strtolower($standard_fields['rank']) === "premium" ) {
-        update_premium_meta($pid, $listing);
-      }
-      elseif ($listing_type_id) {
-        reset_listing_type($pid, $listing_type_id);
-      }
+        if (strtolower($standard_fields['rank']) === "premium") {
+            update_premium_meta($pid, $listing);
+        } elseif ($listing_type_id) {
+            reset_listing_type($pid, $listing_type_id);
+        }
 
-      BW_upload_images($pid, $images[0], $images[1]);
+        BW_upload_images($pid, $images[0], $images[1]);
 
-      // Update if we have pid
-      if( $pid ){
-        $time = current_time('mysql');
-        $post_updates = array(
-          'ID'            => $pid,
-          'post_title'    => $company,
-          'post_content'  => $standard_fields['description'],
-          'post_modified'     => $time,
-          'post_modified_gmt' => get_gmt_from_date( $time ),
-        );
-        $pid = wp_update_post($post_updates, true);
+        // Update if we have pid
+        if ($pid) {
+            $time = current_time('mysql');
+            $post_updates = array(
+                'ID' => $pid,
+                'post_title' => $company,
+                'post_content' => $standard_fields['description'],
+                'post_modified' => $time,
+                'post_modified_gmt' => get_gmt_from_date($time),
+            );
+            $pid = wp_update_post($post_updates, true);
 
-        update_standard_fields($pid, $standard_fields);
+            update_standard_fields($pid, $standard_fields);
 
-        return [
-          true,
-          "WP Post ".$pid." updated.",
-          get_the_permalink($pid),
-          $pid
-        ];
-      }
-
-    }
-    else {
-      // return that listing does not exist
+            return [
+                true,
+                "WP Post " . $pid . " updated.",
+                get_the_permalink($pid),
+                $pid
+            ];
+        }
+    } else {
+        // return that listing does not exist
     }
 
     return [
-      false,
-      "Listing Not Updated.",
-      false,
-      false
+        false,
+        "Listing Not Updated.",
+        false,
+        false
     ];
-  }
-  else {
-    return [
-      false,
-      "Listing Not Updated. Company name in SV API Response was empty.",
-      false,
-      false
-    ];
-  }
 }
 
 function handle_dtn_cats($dtnTab, $pid) {
@@ -257,28 +255,9 @@ function handle_dtn_cats($dtnTab, $pid) {
 }
 
 function update_standard_fields($pid, $standard_fields) {
-  update_field('listing_id', $standard_fields['listing_id'], $pid);
-  update_field('address', $standard_fields['address'], $pid);
-  update_field('alternate', $standard_fields['alternate'], $pid);
-  update_field('company', $standard_fields['company'], $pid);
-  update_field('contact', $standard_fields['contact'], $pid);
-  update_field('email', $standard_fields['email'], $pid);
-  update_field('hours', $standard_fields['hours'], $pid);
-  update_field('facebook', $standard_fields['facebook'], $pid);
-  update_field('fax', $standard_fields['fax'], $pid);
-  update_field('instagram', $standard_fields['instagram'], $pid);
-  update_field('map_coordinates', $standard_fields['map_coordinates'], $pid);
-  update_field('phone', $standard_fields['phone'], $pid);
-  update_field('rank', $standard_fields['rank'], $pid);
-  update_field('region', $standard_fields['region'], $pid);
-  update_field('type_of_member', $standard_fields['type_of_member'], $pid);
-  update_field('search_keywords', $standard_fields['search_keywords'], $pid);
-  update_field('sort_company', $standard_fields['sort_company'], $pid);
-  update_field('tollfree', $standard_fields['tollfree'], $pid);
-  update_field('twitter', $standard_fields['twitter'], $pid);
-  update_field('wct_id', $standard_fields['wct_id'], $pid);
-  update_field('website', $standard_fields['website'], $pid);
-  update_field('youtube', $standard_fields['youtube'], $pid);
+    foreach ($standard_fields as $field_key => $value) {
+        update_field($field_key, $value, $pid);
+    }
 }
 
 function reset_listing_type($pid, $listing_type_id) {
@@ -545,6 +524,7 @@ function grab_fields($listing){
     $wct_id                 = !empty( $listing['WCTID'] ) ? $listing['WCTID'] : '';
     $website                = !empty( $listing['WEBURL'] ) ? $listing['WEBURL'] : '';
     $description            = !empty( $listing['DESCRIPTION'] ) ? $listing['DESCRIPTION'] : '';
+    $rwmenu                 = $listing['RWMENU'] ?? '';
 
     $twitter                = '';
     $facebook               = '';
@@ -648,6 +628,7 @@ function grab_fields($listing){
   $fields['facebook'] = $facebook;
   $fields['instagram'] = $instagram;
   $fields['youtube'] = $youtube;
+  $fields['rwmenu'] = $rwmenu;
 
   $fields['post_cats'] = $post_cats;
   $fields['category'] = $category;
@@ -1322,112 +1303,103 @@ function update_events_status() {
     }
 }
 
-function process_listings ($listings, $existing_listing_ids, $existing_companies) {
+function process_listings($listings, $existing_listing_ids, $existing_companies) {
+    $this_pages_listings = array();
 
-  $this_pages_listings = array();
+    $processed_this_page = 0;
+    $updated_this_page = 0;
+    $errors_this_page = 0;
+    $added_this_page = 0;
 
-  $processed_this_page  = 0;
-  $updated_this_page 	  = 0;
-  $errors_this_page 	  = 0;
-  $added_this_page 	    = 0;
+    foreach ($listings as $listing) {
+        $processed_this_page++;
 
-  foreach ($listings as $listing) {
+        $svid = $listing['LISTINGID'];
+        $last_updated = $listing['LASTUPDATED'];
+        $company = ! empty($listing['COMPANY']) ? $listing['COMPANY'] : false;
+        $sort_company = ! empty($listing['SORTCOMPANY']) ? $listing['SORTCOMPANY'] : $svid . ' Company Name Missing';
+        $isFeatured = $listing['DTN']['RANK'] == 1 ? true : false;
+        $dtnTab = $listing['DTN'];
 
-    $processed_this_page++;
+        if ($company) {
+            $type_name = $listing['TYPENAME'];
 
-    $svid 				    = $listing['LISTINGID'];
-    $last_updated 		= $listing['LASTUPDATED'];
-    $company         	= !empty( $listing['COMPANY'] ) ? $listing['COMPANY'] : false;
-    $sort_company 		= !empty( $listing['SORTCOMPANY'] ) ? $listing['SORTCOMPANY'] : $svid . ' Company Name Missing';
-    $isFeatured       = $listing['DTN']['RANK'] == 1 ? true : false;
-    $dtnTab           = $listing['DTN'];
+            // Add new listings (only add type of website)
+            if (! in_array($svid, $existing_listing_ids) && ($type_name == "Website")) {
+                array_push($existing_listing_ids, $svid);
+                array_push($existing_companies, $company);
 
-    if ($company) {
+                $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $svid);
 
-      $type_name = $listing['TYPENAME'];
+                $create_new_listing_result = create_new_listing($SV_API_RESPONSE, $isFeatured, $dtnTab);
 
-      // Add new listings (only add type of website)
-      if( !in_array($svid, $existing_listing_ids) 
-        // && !in_array($company, $existing_companies) 
-        && ($type_name == "Website") ){
+                $return_status = $create_new_listing_result[0];
+                $return_message = $create_new_listing_result[1];
+                $return_pid = $create_new_listing_result[3];
 
-        array_push($existing_listing_ids, $svid);
-        array_push($existing_companies, $company);
+                if ($return_status) {
+                    $added_this_page++;
 
-        $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $svid);
+                    $this_pages_listings[$return_pid] = [
+                        $sort_company,
+                        $return_message
+                    ];
+                } else {
+                    $errors_this_page++;
+                    $this_pages_listings[$svid] = [
+                        $sort_company,
+                        "Failed to create listing."
+                    ];
+                }
 
-        $create_new_listing_result = create_new_listing($SV_API_RESPONSE, $isFeatured, $dtnTab);
+            } elseif (in_array($svid, $existing_listing_ids) && ($type_name == "Website")) {
 
-        $return_status = $create_new_listing_result[0];
-        $return_message = $create_new_listing_result[1];
-        $return_pid = $create_new_listing_result[3];
+                // Listing ID exists, update it
+                $post_data = get_posts([
+                    'post_type' => 'listings',
+                    'meta_key' => 'listing_id',
+                    'meta_value' => $svid,
+                    'posts_per_page' => 1,
+                    'fields' => 'ids',
+                    'post_status' => 'any',
+                ]);
 
-        if ($return_status) {
-          $added_this_page++;
+                if (isset($post_data[0])) { //post has been found
+                    $the_pid = $post_data[0];
+                    $svid = intval(get_field("listing_id", $the_pid));
 
-          $this_pages_listings[$return_pid] = [
-            $sort_company,
-            $return_message
-          ];
+                    $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $svid);
+
+                    $update_listing_result = update_listing($SV_API_RESPONSE, $the_pid, $isFeatured, $dtnTab);
+
+                    $return_status = $update_listing_result[0];
+                    $return_message = $update_listing_result[1];
+                    $return_pid = $update_listing_result[3];
+
+                    if ($return_status) {
+                        $updated_this_page++;
+                        $this_pages_listings[$return_pid] = [
+                            $sort_company,
+                            $return_message
+                        ];
+                    } else {
+                        $errors_this_page++;
+                        $this_pages_listings[$svid] = [
+                            $sort_company,
+                            "Failed to update listing. PID: " . $return_pid . " Error: " . $return_message
+                        ];
+                    }
+                }
+            }
         }
-        else {
-          $errors_this_page++;
-          $this_pages_listings[$svid] = [
-            $sort_company,
-            "Failed to create listing."
-          ];
-        }
-      }
-      // Listing ID exists, update it
-      elseif( in_array($svid, $existing_listing_ids) && ($type_name == "Website") ) {
-
-        $post_data = get_posts( [
-          'post_type' => 'listings',
-          'meta_key'   => 'listing_id',
-          'meta_value' => $svid,
-          'posts_per_page' => 1,
-          'fields' => 'ids'
-        ] );
-
-        if ( isset( $post_data[0] ) ) { //post has been found
-          $the_pid = $post_data[0];
-          $svid = intval(get_field("listing_id", $the_pid));
-
-          $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $svid);
-
-          $update_listing_result = update_listing($SV_API_RESPONSE, $the_pid, $isFeatured, $dtnTab);
-
-          $return_status = $update_listing_result[0];
-          $return_message = $update_listing_result[1];
-          $return_pid = $update_listing_result[3];
-
-          if ($return_status) {
-            $updated_this_page++;
-            $this_pages_listings[$return_pid] = [
-              $sort_company,
-              $return_message
-            ];
-          }
-          else {
-            $errors_this_page++;
-            $this_pages_listings[$svid] = [
-              $sort_company,
-              "Failed to update listing. PID: ".$return_pid." Error: ".$return_message
-            ];
-          }
-
-        }
-      }
-
     }
-  }
-  return [
-    $processed_this_page,
-    $updated_this_page,
-    $errors_this_page,
-    $added_this_page,
-    $this_pages_listings
-  ];
+    return [
+        $processed_this_page,
+        $updated_this_page,
+        $errors_this_page,
+        $added_this_page,
+        $this_pages_listings
+    ];
 }
 
 // Maybe this could be used later for avoiding weird characters
