@@ -257,28 +257,9 @@ function handle_dtn_cats($dtnTab, $pid) {
 }
 
 function update_standard_fields($pid, $standard_fields) {
-  update_field('listing_id', $standard_fields['listing_id'], $pid);
-  update_field('address', $standard_fields['address'], $pid);
-  update_field('alternate', $standard_fields['alternate'], $pid);
-  update_field('company', $standard_fields['company'], $pid);
-  update_field('contact', $standard_fields['contact'], $pid);
-  update_field('email', $standard_fields['email'], $pid);
-  update_field('hours', $standard_fields['hours'], $pid);
-  update_field('facebook', $standard_fields['facebook'], $pid);
-  update_field('fax', $standard_fields['fax'], $pid);
-  update_field('instagram', $standard_fields['instagram'], $pid);
-  update_field('map_coordinates', $standard_fields['map_coordinates'], $pid);
-  update_field('phone', $standard_fields['phone'], $pid);
-  update_field('rank', $standard_fields['rank'], $pid);
-  update_field('region', $standard_fields['region'], $pid);
-  update_field('type_of_member', $standard_fields['type_of_member'], $pid);
-  update_field('search_keywords', $standard_fields['search_keywords'], $pid);
-  update_field('sort_company', $standard_fields['sort_company'], $pid);
-  update_field('tollfree', $standard_fields['tollfree'], $pid);
-  update_field('twitter', $standard_fields['twitter'], $pid);
-  update_field('wct_id', $standard_fields['wct_id'], $pid);
-  update_field('website', $standard_fields['website'], $pid);
-  update_field('youtube', $standard_fields['youtube'], $pid);
+    foreach ($standard_fields as $field_key => $value) {
+        update_field($field_key, $value, $pid);
+    }
 }
 
 function reset_listing_type($pid, $listing_type_id) {
@@ -545,6 +526,7 @@ function grab_fields($listing){
     $wct_id                 = !empty( $listing['WCTID'] ) ? $listing['WCTID'] : '';
     $website                = !empty( $listing['WEBURL'] ) ? $listing['WEBURL'] : '';
     $description            = !empty( $listing['DESCRIPTION'] ) ? $listing['DESCRIPTION'] : '';
+    $rwmenu                 = $listing['RWMENU'] ?? '';
 
     $twitter                = '';
     $facebook               = '';
@@ -648,6 +630,7 @@ function grab_fields($listing){
   $fields['facebook'] = $facebook;
   $fields['instagram'] = $instagram;
   $fields['youtube'] = $youtube;
+  $fields['rwmenu'] = $rwmenu;
 
   $fields['post_cats'] = $post_cats;
   $fields['category'] = $category;
