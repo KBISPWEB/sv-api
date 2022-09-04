@@ -1,96 +1,88 @@
 <?php
 
 
-function create_new_listing($response, $isFeatured = NULL, $dtnTab = []){
-  if ($response['REQUESTSTATUS']['HASERRORS']) {
-    return [
-      false, // status
-      "Error from SV: ".$response['REQUESTSTATUS']['ERRORS']['ITEM']['DETAIL'], //message
-      false, // link
-      false  // pid
-    ];
-  }
-  else {
-    $listing                  = $response['LISTING'];
+function create_new_listing($response, $isFeatured = null, $dtnTab = []) {
+    if ($response['REQUESTSTATUS']['HASERRORS']) {
+        return [
+            false, // status
+            "Error from SV: " . $response['REQUESTSTATUS']['ERRORS']['ITEM']['DETAIL'], //message
+            false, // link
+            false  // pid
+        ];
+    }
 
-    $images_response          = isset( $listing['IMAGES']['ITEM'] ) ? $listing['IMAGES']['ITEM'] : false;
-    $hr_response              = isset( $listing['HIGHRESIMAGE']['ITEM'] ) ? $listing['HIGHRESIMAGE']['ITEM'] : false;
-    $last_updated             = $listing['LASTUPDATED'];
-    $svid                     = $listing['LISTINGID'];
-    $company                  = !empty( $listing['COMPANY'] ) ? $listing['COMPANY'] : false;
+    $listing         = $response['LISTING'];
+    $images_response = isset($listing['IMAGES']['ITEM']) ? $listing['IMAGES']['ITEM'] : false;
+    $hr_response     = isset($listing['HIGHRESIMAGE']['ITEM']) ? $listing['HIGHRESIMAGE']['ITEM'] : false;
+    $last_updated    = $listing['LASTUPDATED'];
+    $svid            = $listing['LISTINGID'];
+    $company         = ! empty($listing['COMPANY']) ? $listing['COMPANY'] : false;
 
     if ($company) { // if company name missing, abort
 
-      $standard_fields = grab_fields($listing);
-      $listing_type_id = isset($listing['TypeofMember']) ? process_membership_info($listing['TypeofMember']) : false;
-      $images          = process_api_images($images_response, $hr_response);
+        $standard_fields = grab_fields($listing);
+        $listing_type_id = isset($listing['TypeofMember']) ? process_membership_info(
+            $listing['TypeofMember']
+        ) : false;
+        $images = process_api_images($images_response, $hr_response);
 
-      // Create the post
-      $post = array(
-        'post_title'    => $company,
-        'post_author'   => 1,
-        'post_content'  => $standard_fields['description'],
-        'post_status'   => 'publish',
-        'post_type'     => 'listings'
-      );
-      $pid = wp_insert_post($post, true);  // Pass the value of $post to WordPress the insert function
+        // Create the post
+        $post = array(
+            'post_title'   => $company,
+            'post_author'  => 1,
+            'post_content' => $standard_fields['description'],
+            'post_status'  => 'publish',
+            'post_type'    => 'listings',
+        );
+        $pid = wp_insert_post($post, true);  // Pass the value of $post to WordPress the insert function
 
-      // populate amenities textarea and add amenities terms
-      $tag_to_tab = get_amenities_info();
-      [$amenities_string, $amenities_taxonomies] = process_amenities($listing['AMENITIES']['ITEM'], $tag_to_tab);
-      update_field("amenities", $amenities_string, $pid);
-      wp_set_object_terms($pid, $amenities_taxonomies, 'amenities');
+        // populate amenities textarea and add amenities terms
+        $tag_to_tab = get_amenities_info();
 
-      // add region terms
-      $region_tax_ids = process_region($standard_fields['region']);
-      wp_set_object_terms($pid, $region_tax_ids, 'regions');
+        [$amenities_string, $amenities_taxonomies] = process_amenities($listing['AMENITIES']['ITEM'], $tag_to_tab);
+        update_field("amenities", $amenities_string, $pid);
+        wp_set_object_terms($pid, $amenities_taxonomies, 'amenities');
 
-      $dtnCats = [];
-      if (!is_null($isFeatured)) {
-        update_field('featured', $isFeatured, $pid);
-        $dtnCats = handle_dtn_cats($dtnTab, $pid);
-      }
+        // add region terms
+        $region_tax_ids = process_region($standard_fields['region']);
+        wp_set_object_terms($pid, $region_tax_ids, 'regions');
 
-      $combined_post_cats = array_merge($dtnCats, $standard_fields['post_cats']);
+        $dtnCats = [];
+        if (! is_null($isFeatured)) {
+            update_field('featured', $isFeatured, $pid);
+            $dtnCats = handle_dtn_cats($dtnTab, $pid);
+        }
 
-      // add post terms
-      wp_set_object_terms($pid, $combined_post_cats, 'category');
+        $combined_post_cats = array_merge($dtnCats, $standard_fields['post_cats']);
 
-      // populate the post meta data
-      update_standard_fields($pid, $standard_fields);
+        // add post terms
+        wp_set_object_terms($pid, $combined_post_cats, 'category');
 
-      if ( strtolower($standard_fields['rank']) === "premium" ) {
-        update_premium_meta($pid, $listing);
-      }
-      elseif ($listing_type_id) {
-        reset_listing_type($pid, $listing_type_id);
-      }
+        // populate the post meta data
+        update_standard_fields($pid, $standard_fields);
 
-      BW_upload_images($pid, $images[0], $images[1]);
+        if (strtolower($standard_fields['rank']) === "premium") {
+            update_premium_meta($pid, $listing);
+        } elseif ($listing_type_id) {
+            reset_listing_type($pid, $listing_type_id);
+        }
 
-      return [
-        true,
-        "WP Post ".$pid." created.",
-        get_the_permalink($pid),
-        $pid
-      ];
+        BW_upload_images($pid, $images[0], $images[1]);
+
+        return [
+            true,
+            "WP Post " . $pid . " created.",
+            get_the_permalink($pid),
+            $pid
+        ];
+    } else {
+        return [
+            false,
+            "Listing Not Updated. Company name in SV API Response was empty.",
+            false,
+            false
+        ];
     }
-    else {
-      return [
-        false,
-        "Listing Not Updated. Company name in SV API Response was empty.",
-        false,
-        false
-      ];
-    }
-  }
-
-  return [
-    false,
-    "Attempt to create post failed.",
-    false,
-    false
-  ];
 }
 
 function update_listing($response, $pid, $isFeatured = null, $dtnTab = []) {
@@ -1307,19 +1299,19 @@ function process_listings($listings, $existing_listing_ids, $existing_companies)
     $this_pages_listings = array();
 
     $processed_this_page = 0;
-    $updated_this_page = 0;
-    $errors_this_page = 0;
-    $added_this_page = 0;
+    $updated_this_page   = 0;
+    $errors_this_page    = 0;
+    $added_this_page     = 0;
 
     foreach ($listings as $listing) {
         $processed_this_page++;
 
-        $svid = $listing['LISTINGID'];
+        $svid         = $listing['LISTINGID'];
         $last_updated = $listing['LASTUPDATED'];
-        $company = ! empty($listing['COMPANY']) ? $listing['COMPANY'] : false;
+        $company      = ! empty($listing['COMPANY']) ? $listing['COMPANY'] : false;
         $sort_company = ! empty($listing['SORTCOMPANY']) ? $listing['SORTCOMPANY'] : $svid . ' Company Name Missing';
-        $isFeatured = $listing['DTN']['RANK'] == 1 ? true : false;
-        $dtnTab = $listing['DTN'];
+        $isFeatured   = (int) $listing['DTN']['RANK'] > 0;
+        $dtnTab       = $listing['DTN'];
 
         if ($company) {
             $type_name = $listing['TYPENAME'];

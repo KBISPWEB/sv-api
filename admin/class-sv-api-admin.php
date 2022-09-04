@@ -1797,134 +1797,128 @@ class SV_Api_Admin {
 
 	} //run_bulk_listings
 
-	public function run_bulk_listings(){
-			
-		$page = intval($_POST['page']);
+    public function run_bulk_listings() {
+        if (!isset($_POST['is_triggered']) || $_POST['is_triggered'] != 'true') {
+            return;
+        }
 
-		/* ==========================================================================
-		BULK LISTINGS
-		========================================================================== */
-			// init_bulk_listings();
-			if ( isset($_POST['is_triggered']) && $_POST['is_triggered'] == 'true' ):
-			// if ( false ):
+        // BULK LISTINGS
+        $page = intval($_POST['page']);
+        $html = '';
 
-				$html = '';
+        if ($page == 0) {
+            update_option('sv_api_last_run', date("F j, Y, g:i a"));
+            update_option('sv_api_failure_last_run', false);
+            update_option('sv_api_method', 'manual');
+            update_option('sv_api_listings_processed', 0);
+            update_option('sv_api_listings_updated', 0);
+            update_option('sv_api_listings_errors', 0);
+            update_option('sv_api_listings_added', 0);
+            // List of listings ids that are processed
+            update_option('sv_api_listings_ids_processed', []);
 
-				if( $page == 0 ):
-					update_option( 'sv_api_last_run', date("F j, Y, g:i a") );
-					update_option( 'sv_api_failure_last_run', false );
-					update_option( 'sv_api_method', 'manual' );
-					update_option( 'sv_api_listings_processed', 0 );
-					update_option( 'sv_api_listings_updated',  0 );
-					update_option( 'sv_api_listings_errors', 0 );
-					update_option( 'sv_api_listings_added', 0 );
-                    // List of listings ids that are processed
-                    update_option('sv_api_listings_ids_processed', []);
-
-					$results_num = sv_api_connection('getListings', 1);
-					$results_count = $results_num['REQUESTSTATUS']['RESULTS'];
-					update_option( 'sv_api_results_count', $results_count );
-				endif; // page == 0
+            $results_num   = sv_api_connection('getListings', 1);
+            $results_count = $results_num['REQUESTSTATUS']['RESULTS'];
+            update_option('sv_api_results_count', $results_count);
+        }
 
 
-				$process_count 	= get_option( 'sv_api_listings_processed' );
-				$updated_count 	= get_option( 'sv_api_listings_updated' );
-				$error_count 	= get_option( 'sv_api_listings_errors' );
-				$added_count 	= get_option( 'sv_api_listings_added' );
+        $process_count = get_option('sv_api_listings_processed');
+        $updated_count = get_option('sv_api_listings_updated');
+        $error_count   = get_option('sv_api_listings_errors');
+        $added_count   = get_option('sv_api_listings_added');
 
-				$failed 		= false;
-				$results_count 	= get_option( 'sv_api_results_count' );
-				$api_pagesize 	= 10; // max allowed by Simpleview API is 50
-				$num_calls 		= ceil($results_count / $api_pagesize);
-				$page 			= $page + 1;
-				$hasMore 		= $page >= $num_calls ? false : true;
+        $failed        = false;
+        $results_count = get_option('sv_api_results_count');
+        $api_pagesize  = 10; // max allowed by Simpleview API is 50
+        $num_calls     = ceil($results_count / $api_pagesize);
+        $page          = $page + 1;
+        $hasMore       = ! ($page >= $num_calls);
 
-				date_default_timezone_set('America/New_York');
+        date_default_timezone_set('America/New_York');
 
-				if ($page == 1) {
-					$log_options = get_option( 'sv_api_logs' );
-					[$log_success, $log_folder, $log_file] = createLog($log_options, 'listings', true, $results_count);
-				}
+        if ($page == 1) {
+            $log_options                           = get_option('sv_api_logs');
+            [$log_success, $log_folder, $log_file] = createLog($log_options, 'listings', true, $results_count);
+        }
 
-				$existing_listing_ids 	= existing_listing_ids();
-				$existing_companies 	= existing_companies();
+        $existing_listing_ids = existing_listing_ids();
+        $existing_companies   = existing_companies();
 
-				$response = sv_api_connection('getListings', $api_pagesize, $page);
+        $response = sv_api_connection('getListings', $api_pagesize, $page);
 
-				if( $response == 'error'):
-					$failed = true;
-				endif;
-				$listings = $response['LISTINGS']['LISTING'];
+        if ($response == 'error') {
+            $failed = true;
+        }
+        $listings = $response['LISTINGS']['LISTING'];
 
-				[$processed_this_page,
-				$updated_this_page,
-				$errors_this_page,
-				$added_this_page,
-				$this_pages_listings] = process_listings($listings, $existing_listing_ids, $existing_companies);
+        [
+            $processed_this_page,
+            $updated_this_page,
+            $errors_this_page,
+            $added_this_page,
+            $this_pages_listings
+        ] = process_listings($listings, $existing_listing_ids, $existing_companies);
 
-				$starting_index = ($page - 1)*$api_pagesize;
-				$log_options 	= get_option( 'sv_api_logs' );
-				$log_file 		= getLogFile($log_options, 'listings');
-				addLogData($log_file, $this_pages_listings, $starting_index);
+        $starting_index = ($page - 1) * $api_pagesize;
+        $log_options    = get_option('sv_api_logs');
+        $log_file       = getLogFile($log_options, 'listings');
+        addLogData($log_file, $this_pages_listings, $starting_index);
 
-				$process_count 	= get_option( 'sv_api_listings_processed' );
-				$updated_count 	= get_option( 'sv_api_listings_updated' );
-				$error_count 	= get_option( 'sv_api_listings_errors' );
-				$added_count 	= get_option( 'sv_api_listings_added' );
-                // List of listings ids that have already been imported
-                $processed_listings_ids = get_option( 'sv_api_listings_ids_processed', [] );
-                $processed_listings_ids = is_array($processed_listings_ids) ? array_merge($processed_listings_ids, array_keys($this_pages_listings)) : array_keys($this_pages_listings);
+        $process_count = get_option('sv_api_listings_processed');
+        $updated_count = get_option('sv_api_listings_updated');
+        $error_count   = get_option('sv_api_listings_errors');
+        $added_count   = get_option('sv_api_listings_added');
 
-				update_option( 'sv_api_listings_processed', $process_count + $processed_this_page );
-				update_option( 'sv_api_listings_updated', $updated_count + $updated_this_page );
-				update_option( 'sv_api_listings_errors', $error_count + $errors_this_page );
-				update_option( 'sv_api_listings_added', $added_count + $added_this_page );
-                update_option( 'sv_api_listings_ids_processed', $processed_listings_ids );
+        // List of listings ids that have already been imported
+        $processed_listings_ids = get_option('sv_api_listings_ids_processed', []);
+        $processed_listings_ids = is_array($processed_listings_ids) ? array_merge(
+            $processed_listings_ids,
+            array_keys($this_pages_listings)
+        ) : array_keys($this_pages_listings);
 
-				// TODO: make a function to add this front end data
+        update_option('sv_api_listings_processed', $process_count + $processed_this_page);
+        update_option('sv_api_listings_updated', $updated_count + $updated_this_page);
+        update_option('sv_api_listings_errors', $error_count + $errors_this_page);
+        update_option('sv_api_listings_added', $added_count + $added_this_page);
+        update_option('sv_api_listings_ids_processed', $processed_listings_ids);
 
-				$total = $results_count;
-				$percent = round( ( $page / $num_calls ) * 100,2 );
+        // TODO: make a function to add this front end data
 
-				if( $failed ):
-					$html .= '<br>Page ' . $page . ' of ' . $num_calls . ' FAILED .... ' . $percent . '%<br>';
-					update_option( 'sv_api_failure_last_run', true );
-				else:
-					$html .= '<div style="margin-top: 30px; margin-bottom: 10px;">'.
-											'Page '. $page . ' of ' . $num_calls . ' completed: ' .
-											$processed_this_page . ' Processed, '.
-											$added_this_page . ' Added, '.
-											$updated_this_page . ' Updated, '.
-											$errors_this_page . ' Errors '. '.... ' . $percent . '%'.
-										'</div>';
-				endif;
+        $total   = $results_count;
+        $percent = round(($page / $num_calls) * 100, 2);
 
+        if ($failed) {
+            $html .= '<br>Page ' . $page . ' of ' . $num_calls . ' FAILED .... ' . $percent . '%<br>';
+            update_option('sv_api_failure_last_run', true);
+        } else {
+            $html .= '<div style="margin-top: 30px; margin-bottom: 10px;">' . 'Page ' . $page . ' of ' . $num_calls . ' completed: ' . $processed_this_page . ' Processed, ' . $added_this_page . ' Added, ' . $updated_this_page . ' Updated, ' . $errors_this_page . ' Errors ' . '.... ' . $percent . '%' . '</div>';
+        }
 
-				if ( count($this_pages_listings) ){
-					foreach ($this_pages_listings as $listing_status) {
-						$html .= '<div style="margin-left:25px;">'.$listing_status[0] . ' -- ' . $listing_status[1].'</div>';
-					}
-				}
+        if (count($this_pages_listings)) {
+            foreach ($this_pages_listings as $listing_status) {
+                $html .= '<div style="margin-left:25px;">' . $listing_status[0] . ' -- ' . $listing_status[1] . '</div>';
+            }
+        }
 
-                // Update listings status
-                if ( !$hasMore ) {
-                    $this->update_absent_listings_status();
-                }
+        // Update listings status
+        if (! $hasMore) {
+            $this->update_absent_listings_status();
+        }
 
-				$data = array(
-				    'page'    => $page,
-				    'num_calls' => $num_calls,
-				    'api_pagesize' => $api_pagesize,
-				    'hasMore' => $hasMore,
-						'logData' => $html,
-						'results_count'   => $results_count,
-						'added_count'   => $added_this_page,
-						'failed'  => $failed,
-						'percent' => $percent
-				);
-				wp_send_json($data);
-			endif; // if is_triggered
-	} //run_bulk_listings
+        $data = array(
+            'page'          => $page,
+            'num_calls'     => $num_calls,
+            'api_pagesize'  => $api_pagesize,
+            'hasMore'       => $hasMore,
+            'logData'       => $html,
+            'results_count' => $results_count,
+            'added_count'   => $added_this_page,
+            'failed'        => $failed,
+            'percent'       => $percent,
+        );
+        wp_send_json($data);
+    }
 
     /**
      * Make listings that are not included in the latest API response as drafts
@@ -2266,87 +2260,60 @@ class SV_Api_Admin {
 UPDATES
 ========================================================================== */
 
-	public function run_single_listing_import() {
+    public function run_single_listing_import() {
+        $data = (object)[
+            "postFound" => false
+        ];
 
-		$data = (object)[
-			"postFound" => false
-		];
+        if (isset($_POST['pid'])) {
+            if ($_POST['idType'] == "sv") {
+                $query_options = array(
+                    'post_type' => 'listings',
+                    'posts_per_page' => 1,
+                    'fields' => 'ids',
+                    'meta_query' => array(
+                        array(
+                            'key' => 'listing_id',
+                            'compare' => '==',
+                            'value' => $_POST['pid']
+                        ),
+                    ),
+                );
+            } else { // user is using WP Post ID
+                $query_options = array(
+                    'post_type' => 'listings',
+                    'posts_per_page' => 1,
+                    'fields' => 'ids',
+                    'p' => $_POST['pid']
+                );
+            }
 
-		if ($_POST['idType'] == "sv") { //user is using simpleview ID
+            $query_response = new WP_Query($query_options);
 
-			if (isset($_POST['pid'])) {
-				$query_options = array(
-				  'post_type'      => 'listings',
-				  'posts_per_page' => 1,
-				  'fields'         => 'ids',
-				  'meta_query' => array(
-				  					array(
-				  						'key'     => 'listing_id',
-				  						'compare' => '==',
-				  						'value'		=> $_POST['pid']
-				  					),
-				  				),
-				);
+            if (count($query_response->posts)) {
+                $the_pid = $query_response->posts[0];
+                $data->postFound = true;
+                $data->pid = $the_pid;
+                $data->svid = intval(get_field("listing_id", $the_pid));
+                $data->link = get_permalink($the_pid);
 
-				$query_response = new WP_Query($query_options);
+                $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $data->svid);
 
-				if ( count($query_response->posts) ) { // we found the wordpress post with that SVID
-					$the_pid = $query_response->posts[0];
-					$data->postFound = true;
-					$data->pid = $the_pid;
-					$data->svid = intval(get_field("listing_id", $the_pid));
-					$data->link = get_permalink($the_pid);
+                $isFeatured = (isset($SV_API_RESPONSE['LISTING']['DTN']['RANK']) && (int)$SV_API_RESPONSE['LISTING']['DTN']['RANK'] > 0);
+                $update_listing_result = update_listing($SV_API_RESPONSE, $the_pid, $isFeatured);
 
-					$SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $data->svid);
-					$update_listing_result = update_listing($SV_API_RESPONSE, $the_pid);
+                $data->status = $update_listing_result[0];
+                $data->returnMessage = $update_listing_result[1];
+            }
+        }
 
-					$data->status = $update_listing_result[0];
-					$data->returnMessage = $update_listing_result[1];
-				}
-				else { // there is no wordpress post, we will create a new one
-					$data->createNew = true;
-					$data->svid = $_POST['pid'];
-				}
-			}
-		}
-		else { // user is using WP Post ID
-			if (isset($_POST['pid'])) {
 
-				$query_options = array(
-				  'post_type'      => 'listings',
-				  'posts_per_page' => 1,
-				  'fields'         => 'ids',
-				  'p'			 				 => $_POST['pid']
-				);
+        $encoded_json = json_encode($data);
 
-				$query_response = new WP_Query($query_options);
+        echo $encoded_json;
 
-				if ( count($query_response->posts) ) { //post has been found
-
-					$the_pid = $query_response->posts[0];
-					$data->postFound = true;
-					$data->pid = $the_pid;
-					$data->link = get_permalink($the_pid);
-					$data->svid = intval(get_field("listing_id", $the_pid));
-
-					$SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $data->svid);
-
-					$update_listing_result = update_listing($SV_API_RESPONSE, $the_pid);
-
-					$data->status = $update_listing_result[0];
-					$data->returnMessage = $update_listing_result[1];
-
-				}
-
-			}
-		}
-
-		$encoded_json = json_encode($data);
-
-		echo $encoded_json;
-
-		die();
-	}
+        die();
+    }
 
 	public function create_new_post_from_svid() {
 		$data = (object)[
