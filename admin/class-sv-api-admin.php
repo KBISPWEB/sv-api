@@ -416,6 +416,22 @@ class SV_Api_Admin {
 					'readonly' => 0,
 					'disabled' => 0,
 				),
+                array(
+                    'key' => 'field_631efd9c183af',
+                    'label' => 'Menu',
+                    'name' => 'rwmenu',
+                    'type' => 'url',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array(
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                ),
 				array (
 					'key' => 'field_5e4d9d0115e53',
 					'label' => 'Tollfree',
