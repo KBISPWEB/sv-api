@@ -161,6 +161,7 @@ function update_listing($response, $pid, $isFeatured = null, $dtnTab = []) {
         }
 
         $combined_post_cats = array_merge($dtnCats, $standard_fields['post_cats']);
+        $combined_post_cats = array_unique($combined_post_cats);
 
         // add post terms
         wp_set_object_terms($pid, $combined_post_cats, 'category');
@@ -471,162 +472,171 @@ function process_region($region_name) {
   return [$region_cat_id];
 }
 
-function grab_fields($listing){
-
-  // Address //
-    $address                = '';
-    $address                .= !empty( $listing['ADDR1'] ) ? $listing['ADDR1'] : '';
-    $address                .= !empty( $listing['ADDR2'] ) ? "\n" . $listing['ADDR2'] : '';
-    $address                .= !empty( $listing['ADDR3'] ) ? "\n" . $listing['ADDR3'] : '';
-    $city                   = !empty( $listing['CITY'] ) ? $listing['CITY'] : '';
-    $state                  = !empty( $listing['STATE'] ) ? $listing['STATE'] : '';
-    $zip                    = !empty( $listing['ZIP'] ) ? ' ' . $listing['ZIP'] : '';
-    if( $city != '' && $state != ''):
-      $city_state = $city . ', ' . $state;
+function grab_fields($listing) {
+    // Address
+    $address  = '';
+    $address .= ! empty($listing['ADDR1']) ? $listing['ADDR1'] : '';
+    $address .= ! empty($listing['ADDR2']) ? "\n" . $listing['ADDR2'] : '';
+    $address .= ! empty($listing['ADDR3']) ? "\n" . $listing['ADDR3'] : '';
+    $city     = ! empty($listing['CITY']) ? $listing['CITY'] : '';
+    $state    = ! empty($listing['STATE']) ? $listing['STATE'] : '';
+    $zip      = ! empty($listing['ZIP']) ? ' ' . $listing['ZIP'] : '';
+    if ($city != '' && $state != ''):
+        $city_state = $city . ', ' . $state;
     else:
-      $city_state = $city . $state;
+        $city_state = $city . $state;
     endif;
-    $address                .= "\n" . $city_state . $zip;
+    $address .= "\n" . $city_state . $zip;
 
-  $map_coordinates        = '';
-  if( !empty( $listing['LATITUDE']) && !empty( $listing['LONGITUDE'] ) ):
-    $map_coordinates        = $listing['LATITUDE'] . ',' . $listing['LONGITUDE'];
-  endif;
+    $map_coordinates = '';
+    if (! empty($listing['LATITUDE']) && ! empty($listing['LONGITUDE'])):
+        $map_coordinates = $listing['LATITUDE'] . ',' . $listing['LONGITUDE'];
+    endif;
 
-  // General //
+    // General //
 
-    $company                = !empty( $listing['COMPANY'] ) ? $listing['COMPANY'] : false;
-    $phone                  = !empty( $listing['PHONE'] ) ? $listing['PHONE'] : '';
-    $alternate              = !empty( $listing['ALTPHONE'] ) ? $listing['ALTPHONE'] : '';
-    $tollfree               = !empty( $listing['TOLLFREE'] ) ? $listing['TOLLFREE'] : '';
-    $fax                    = !empty( $listing['FAX'] ) ? $listing['FAX'] : '';
-    $sort_company           = !empty( $listing['SORTCOMPANY'] ) ? $listing['SORTCOMPANY'] : $listing['LISTINGID'] . ' Company Name Missing';
-    $contact                = !empty( $listing['PRIMARYCONTACTFULLNAME'] ) ? $listing['PRIMARYCONTACTFULLNAME'] : '';
-    $email                  = !empty( $listing['EMAIL'] ) ? $listing['EMAIL'] : '';
-    
-    $hours                  = ( !empty($listing['HOURS']) ? $listing['HOURS'] : !empty($listing['Hours']) ) ? $listing['Hours'] : '';
-    $hours                  =  str_replace([" Monday", " Tuesday", " Wednesday", " Thursday", " Friday", " Saturday", " Sunday"], ["\nMonday", "\nTuesday", "\nWednesday", "\nThursday", "\nFriday", "\nSaturday", "\nSunday"], $hours);
-    $hours                  =  str_replace(["Monday\t", "Tuesday\t", "Wednesday\t", "Thursday\t", "Friday\t", "Saturday\t", "Sunday\t"], ["Monday: ", "Tuesday: ", "Wednesday: ", "Thursday: ", "Friday: ", "Saturday: ", "Sunday: "], $hours);
+    $company      = ! empty($listing['COMPANY']) ? $listing['COMPANY'] : false;
+    $phone        = ! empty($listing['PHONE']) ? $listing['PHONE'] : '';
+    $alternate    = ! empty($listing['ALTPHONE']) ? $listing['ALTPHONE'] : '';
+    $tollfree     = ! empty($listing['TOLLFREE']) ? $listing['TOLLFREE'] : '';
+    $fax          = ! empty($listing['FAX']) ? $listing['FAX'] : '';
+    $sort_company = ! empty($listing['SORTCOMPANY']) ? $listing['SORTCOMPANY'] : $listing['LISTINGID'] . ' Company Name Missing';
+    $contact      = ! empty($listing['PRIMARYCONTACTFULLNAME']) ? $listing['PRIMARYCONTACTFULLNAME'] : '';
+    $email        = ! empty($listing['EMAIL']) ? $listing['EMAIL'] : '';
 
-    $rank                   = !empty( $listing['RANKNAME'] ) ? $listing['RANKNAME'] : '';
-    $region                 = !empty( $listing['REGION'] ) ? $listing['REGION'] : '';
-    $search_keywords        = !empty( $listing['LISTING_KEYWORDS'] ) ? $listing['LISTING_KEYWORDS'] : '';
-    $ticket_link            = !empty( $listing['TICKETSLINK'] ) ? $listing['TICKETSLINK'] : '';
-    $type_of_member         = !empty( $listing['TYPEOFMEMBER'] ) ? $listing['TYPEOFMEMBER'] : '';
-    $wct_id                 = !empty( $listing['WCTID'] ) ? $listing['WCTID'] : '';
-    $website                = !empty( $listing['WEBURL'] ) ? $listing['WEBURL'] : '';
-    $description            = !empty( $listing['DESCRIPTION'] ) ? $listing['DESCRIPTION'] : '';
-    $rwmenu                 = $listing['RWMENU'] ?? '';
+    $hours = (! empty($listing['HOURS']) ? $listing['HOURS'] : ! empty($listing['Hours'])) ? $listing['Hours'] : '';
+    $hours = str_replace(
+        [" Monday", " Tuesday", " Wednesday", " Thursday", " Friday", " Saturday", " Sunday"],
+        ["\nMonday", "\nTuesday", "\nWednesday", "\nThursday", "\nFriday", "\nSaturday", "\nSunday"],
+        $hours
+    );
+    $hours = str_replace(
+        ["Monday\t", "Tuesday\t", "Wednesday\t", "Thursday\t", "Friday\t", "Saturday\t", "Sunday\t"],
+        ["Monday: ", "Tuesday: ", "Wednesday: ", "Thursday: ", "Friday: ", "Saturday: ", "Sunday: "],
+        $hours
+    );
 
-    $twitter                = '';
-    $facebook               = '';
-    $instagram              = '';
-    $youtube                = '';
+    $rank            = ! empty($listing['RANKNAME']) ? $listing['RANKNAME'] : '';
+    $region          = ! empty($listing['REGION']) ? $listing['REGION'] : '';
+    $search_keywords = ! empty($listing['LISTING_KEYWORDS']) ? $listing['LISTING_KEYWORDS'] : '';
+    $ticket_link     = ! empty($listing['TICKETSLINK']) ? $listing['TICKETSLINK'] : '';
+    $type_of_member  = ! empty($listing['TYPEOFMEMBER']) ? $listing['TYPEOFMEMBER'] : '';
+    $wct_id          = ! empty($listing['WCTID']) ? $listing['WCTID'] : '';
+    $website         = ! empty($listing['WEBURL']) ? $listing['WEBURL'] : '';
+    $description     = ! empty($listing['DESCRIPTION']) ? $listing['DESCRIPTION'] : '';
+    $rwmenu          = $listing['RWMENU'] ?? '';
 
-    $social_media = !empty( $listing['SOCIALMEDIA']['ITEM'] ) ? $listing['SOCIALMEDIA']['ITEM'] : '';
+    $twitter   = '';
+    $facebook  = '';
+    $instagram = '';
+    $youtube   = '';
+
+    $social_media = ! empty($listing['SOCIALMEDIA']['ITEM']) ? $listing['SOCIALMEDIA']['ITEM'] : '';
     // Handle social media URLS.
     // SV API Arrays differ if there is only 1 SOCIALMEDIA ITEM
-    if( isset( $social_media[0] ) ):
-      if( is_array( $social_media[0] ) ):
-        foreach ($social_media as $network):
-          $network_service = strtolower( $network['SERVICE'] );
-          $$network_service = !empty( $network['VALUE'] ) ? $network['VALUE'] : '';
-        endforeach;
-      // Only 1 item
-      else:
-        $network_service = strtolower( $social_media['SERVICE'] );
-        $$network_service = !empty( $social_media['VALUE'] ) ? $social_media['VALUE'] : '';
-      endif;
+    if (isset($social_media[0])):
+        if (is_array($social_media[0])):
+            foreach ($social_media as $network):
+                $network_service = strtolower($network['SERVICE']);
+                $$network_service = ! empty($network['VALUE']) ? $network['VALUE'] : '';
+            endforeach;
+        // Only 1 item
+        else:
+            $network_service = strtolower($social_media['SERVICE']);
+            $$network_service = ! empty($social_media['VALUE']) ? $social_media['VALUE'] : '';
+        endif;
     endif;
 
-  // Categories TODO: Maybe Handle Seperately
-    $post_cats              = array();
-    $cat_name               = !empty( $listing['CATNAME'] ) ? $listing['CATNAME'] : '';
-    $cat_slug               = reformCategorySlug($cat_name);
-    $category               = addCategory($cat_name, $cat_slug);
+    // Categories TODO: Maybe Handle Seperately
+    $post_cats = array();
+    $cat_name  = ! empty($listing['CATNAME']) ? $listing['CATNAME'] : '';
+    $cat_slug  = reformCategorySlug($cat_name);
 
-    $subcat_name            = !empty( $listing['SUBCATNAME'] ) ? $listing['SUBCATNAME'] : '';
-    if( $subcat_name != ''):
-      $subcat_slug            = reformCategorySlug($subcat_name);
-      // addCategory won't add parent cat if category and subcat are the same
-      $subcategory            = addCategory($subcat_name, $subcat_slug, $category);
+    $category = addCategory($cat_name, $cat_slug);
+
+    $subcat_name = ! empty($listing['SUBCATNAME']) ? $listing['SUBCATNAME'] : '';
+    if ($subcat_name != ''):
+        $subcat_slug = reformCategorySlug($subcat_name);
+        // addCategory won't add parent cat if category and subcat are the same
+        $subcategory = addCategory($subcat_name, $subcat_slug, $category);
     endif;
-
 
     $additional_subcats = array();
-    if (isset($listing['ADDITIONALSUBCATS']['ITEM']) ){
+    if (isset($listing['ADDITIONALSUBCATS']['ITEM'])) {
+        if (isset($listing['ADDITIONALSUBCATS']['ITEM'][0])) {
+            foreach ($listing['ADDITIONALSUBCATS']['ITEM'] as $subcat_array) {
+                $additional_subcat_name = $subcat_array['SUBCATNAME'];
+                if (!$additional_subcat_name) {
+                    continue;
+                }
 
-      if (isset( $listing['ADDITIONALSUBCATS']['ITEM'][0] )) {
-        foreach ($listing['ADDITIONALSUBCATS']['ITEM'] as $subcat_array) {
+                $additional_cat_name = $subcat_array['CATNAME'];
+                $additional_cat_slug = reformCategorySlug($additional_cat_name);
+                $additional_category = addCategory($additional_cat_name, $additional_cat_slug);
 
-          $subcat_name            = $subcat_array['SUBCATNAME'];
-          if( $subcat_name != ''):
-            $cat_name               = $subcat_array['CATNAME'];
-            $cat_slug               = reformCategorySlug($cat_name);
-            $category               = addCategory($cat_name, $cat_slug);
+                $additional_subcat_slug = reformCategorySlug($additional_subcat_name);
+                // addCategory won't add parent cat if category and subcat are the same
+                $additional_subcategory = addCategory($additional_cat_name, $additional_subcat_slug, $additional_category);
 
-            $subcat_slug            = reformCategorySlug($subcat_name);
-            // addCategory won't add parent cat if category and subcat are the same
-            $subcategory            = addCategory($subcat_name, $subcat_slug, $category);
-          endif;
+                array_push($additional_subcats, intval($additional_subcategory));
+            }
+        } else {
+            $additional_subcat_name = $listing['ADDITIONALSUBCATS']['ITEM']['SUBCATNAME'];
+            if ($additional_subcat_name != '') {
+                $additional_cat_name = $listing['ADDITIONALSUBCATS']['ITEM']['CATNAME'];
+                $additional_cat_slug = reformCategorySlug($additional_cat_name);
+                $additional_category = addCategory($additional_cat_name, $additional_cat_slug);
 
-          array_push($additional_subcats, intval($subcategory));
+                $additional_subcat_slug = reformCategorySlug($additional_subcat_name);
+                $additional_subcategory = addCategory(
+                    $additional_subcat_name,
+                    $additional_subcat_slug,
+                    $additional_category
+                );
+                array_push($additional_subcats, intval($additional_subcategory));
+            }
         }
-      }
-      else {
-
-        $subcat_name              = $listing['ADDITIONALSUBCATS']['ITEM']['SUBCATNAME'];
-        if( $subcat_name != ''):
-          $cat_name               = $listing['ADDITIONALSUBCATS']['ITEM']['CATNAME'];
-          $cat_slug               = reformCategorySlug($cat_name);
-          $category               = addCategory($cat_name, $cat_slug);
-
-          $subcat_slug            = reformCategorySlug($subcat_name);
-          $subcategory            = addCategory($subcat_name, $subcat_slug, $category);
-        endif;
-        array_push($additional_subcats, intval($subcategory));
-      }
     }
-    
-    array_push($post_cats, intval($category), intval($subcategory) );
+
+    array_push($post_cats, intval($category), intval($subcategory));
 
     foreach ($additional_subcats as $additional_subcat) {
-      array_push($post_cats, intval($additional_subcat));
+        array_push($post_cats, intval($additional_subcat));
     }
 
 
-  $fields = array();
-  $fields['listing_id'] = $listing['LISTINGID'];
-  $fields['company'] = $company;
-  $fields['address'] = $address;
-  $fields['map_coordinates'] = $map_coordinates;
-  $fields['phone'] = $phone;
-  $fields['alternate'] = $alternate;
-  $fields['tollfree'] = $tollfree;
-  $fields['fax'] = $fax;
-  $fields['sort_company'] = $sort_company;
-  $fields['contact'] = $contact;
-  $fields['email'] = $email;
-  $fields['hours'] = $hours;
-  $fields['rank'] = $rank;
-  $fields['region'] = $region;
-  $fields['search_keywords'] = $search_keywords;
-  $fields['ticket_link'] = $ticket_link;
-  $fields['type_of_member'] = $type_of_member;
-  $fields['wct_id'] = $wct_id;
-  $fields['website'] = $website;
-  $fields['description'] = $description;
-  $fields['twitter'] = $twitter;
-  $fields['facebook'] = $facebook;
-  $fields['instagram'] = $instagram;
-  $fields['youtube'] = $youtube;
-  $fields['rwmenu'] = $rwmenu;
+    $fields = array();
+    $fields['listing_id'] = $listing['LISTINGID'];
+    $fields['company'] = $company;
+    $fields['address'] = $address;
+    $fields['map_coordinates'] = $map_coordinates;
+    $fields['phone'] = $phone;
+    $fields['alternate'] = $alternate;
+    $fields['tollfree'] = $tollfree;
+    $fields['fax'] = $fax;
+    $fields['sort_company'] = $sort_company;
+    $fields['contact'] = $contact;
+    $fields['email'] = $email;
+    $fields['hours'] = $hours;
+    $fields['rank'] = $rank;
+    $fields['region'] = $region;
+    $fields['search_keywords'] = $search_keywords;
+    $fields['ticket_link'] = $ticket_link;
+    $fields['type_of_member'] = $type_of_member;
+    $fields['wct_id'] = $wct_id;
+    $fields['website'] = $website;
+    $fields['description'] = $description;
+    $fields['twitter'] = $twitter;
+    $fields['facebook'] = $facebook;
+    $fields['instagram'] = $instagram;
+    $fields['youtube'] = $youtube;
+    $fields['rwmenu'] = $rwmenu;
 
-  $fields['post_cats'] = $post_cats;
-  $fields['category'] = $category;
-  $fields['subcategory'] = $subcategory;
+    $fields['post_cats'] = $post_cats;
+    $fields['category'] = $category;
+    $fields['subcategory'] = $subcategory;
 
-  return $fields;
+    return $fields;
 }
 
 /* ==========================================================================
