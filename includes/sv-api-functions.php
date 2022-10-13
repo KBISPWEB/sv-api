@@ -208,43 +208,77 @@ function update_listing($response, $pid, $isFeatured = null, $dtnTab = []) {
 }
 
 function handle_dtn_cats($dtnTab, $pid) {
-  $post_cats                 = array();
-  if (isset($dtnTab['CATS']['ITEM'])) {
-    $dtnCats                   = $dtnTab['CATS']['ITEM'];
-    if ( isset($dtnCats['CATNAME']) ) { // Single Cat
-      $cat_name               = $dtnCats['CATNAME'];
-      $cat_slug               = reformCategorySlug($cat_name);
-      $category               = addCategory($cat_name, $cat_slug);
-      $post_cats[]            = $category;
-    }
-    else {
-      foreach ($dtnCats as $cat) {
-        $cat_name               = $cat['CATNAME'];
-        $cat_slug               = reformCategorySlug($cat_name);
-        $category               = addCategory($cat_name, $cat_slug);
-        $post_cats[]            = $category;
-      }
+    $post_cats = array();
+
+    if (isset($dtnTab['CATS']['ITEM'])) {
+        $dtnCats = $dtnTab['CATS']['ITEM'];
+
+        if (isset($dtnCats['CATNAME'])) { // Single Cat
+
+            $category = manageCategory([
+                'id' => $dtnCats['CATID'] ?? '',
+                'name' => $dtnCats['CATNAME'] ?? '',
+            ]);
+
+            if (! is_null($category)) {
+                $post_cats[] = $category;
+            }
+        } else {
+            foreach ($dtnCats as $cat) {
+                $category = manageCategory([
+                    'id' => $cat['CATID'] ?? '',
+                    'name' => $cat['CATNAME'] ?? '',
+                ]);
+                if (! is_null($category)) {
+                    $post_cats[] = $category;
+                }
+            }
+        }
+
+        if (isset($dtnTab['SUBCATS']['ITEM'])) {
+            $dtnSubCats = $dtnTab['SUBCATS']['ITEM'];
+
+            if (isset($dtnSubCats['SUBCATNAME'])) { // Single Cat
+                $category = manageCategory([
+                    'id' => $dtnSubCats['CATID'] ?? '',
+                    'name' => $dtnSubCats['CATNAME'] ?? '',
+                ]);
+                if (! is_null($category)) {
+                    $post_cats[] = $category;
+                }
+
+                $subCategory = manageCategory([
+                    'id' => $dtnSubCats['SUBCATID'] ?? '',
+                    'name' => $dtnSubCats['SUBCATNAME'] ?? '',
+                    'parent' => $category,
+                ]);
+                if (! is_null($subCategory)) {
+                    $post_cats[] = $subCategory;
+                }
+            } else {
+                foreach ($dtnSubCats as $subCat) {
+                    $category = manageCategory([
+                        'id' => $subCat['CATID'] ?? '',
+                        'name' => $subCat['CATNAME'] ?? '',
+                    ]);
+                    if (! is_null($category)) {
+                        $post_cats[] = $category;
+                    }
+
+                    $subCategory = manageCategory([
+                        'id' => $subCat['SUBCATID'] ?? '',
+                        'name' => $subCat['SUBCATNAME'] ?? '',
+                        'parent' => $category,
+                    ]);
+                    if (! is_null($subCategory)) {
+                        $post_cats[] = $subCategory;
+                    }
+                }
+            }
+        }
     }
 
-    if (isset($dtnTab['SUBCATS']['ITEM'])) {
-      $dtnSubCats                   = $dtnTab['SUBCATS']['ITEM'];
-      if ( isset($dtnSubCats['SUBCATNAME']) ) { // Single Cat
-        $cat_name               = $dtnSubCats['SUBCATNAME'];
-        $cat_slug               = reformCategorySlug($cat_name);
-        $category               = addCategory($cat_name, $cat_slug);
-        $post_cats[]            = $category;
-      }
-      else {
-        foreach ($dtnSubCats as $subCat) {
-          $cat_name               = $subCat['SUBCATNAME'];
-          $cat_slug               = reformCategorySlug($cat_name);
-          $category               = addCategory($cat_name, $cat_slug);
-          $post_cats[]            = $category;
-        }
-      }
-    }
-  }
-  return $post_cats;
+    return $post_cats;
 }
 
 function update_standard_fields($pid, $standard_fields) {
@@ -549,61 +583,67 @@ function grab_fields($listing) {
 
     // Categories TODO: Maybe Handle Seperately
     $post_cats = array();
+
     $cat_name  = ! empty($listing['CATNAME']) ? $listing['CATNAME'] : '';
-    $cat_slug  = reformCategorySlug($cat_name);
 
-    $category = addCategory($cat_name, $cat_slug);
+    $category = manageCategory([
+        'id' => $listing['CATID'] ?? '',
+        'name' => $listing['CATNAME'] ?? '',
+    ]);
 
-    $subcat_name = ! empty($listing['SUBCATNAME']) ? $listing['SUBCATNAME'] : '';
-    if ($subcat_name != ''):
-        $subcat_slug = reformCategorySlug($subcat_name);
-        // addCategory won't add parent cat if category and subcat are the same
-        $subcategory = addCategory($subcat_name, $subcat_slug, $category);
-    endif;
+    $subcategory = manageCategory([
+        'id' => $listing['SUBCATID'] ?? '',
+        'name' => $listing['SUBCATNAME'] ?? '',
+        'parent' => $category,
+    ]);
 
     $additional_subcats = array();
     if (isset($listing['ADDITIONALSUBCATS']['ITEM'])) {
         if (isset($listing['ADDITIONALSUBCATS']['ITEM'][0])) {
             foreach ($listing['ADDITIONALSUBCATS']['ITEM'] as $subcat_array) {
-                $additional_subcat_name = $subcat_array['SUBCATNAME'];
-                if (!$additional_subcat_name) {
-                    continue;
-                }
+                $additional_category = manageCategory([
+                    'name' => $subcat_array['CATNAME'] ?? '',
+                    'id' => $subcat_array['CATID'] ?? '',
+                ]);
+                $additional_subcategory = manageCategory([
+                    'name' => $subcat_array['SUBCATNAME'] ?? '',
+                    'id' => $subcat_array['SUBCATID'] ?? '',
+                    'parent' => $additional_category,
+                ]);
 
-                $additional_cat_name = $subcat_array['CATNAME'];
-                $additional_cat_slug = reformCategorySlug($additional_cat_name);
-                $additional_category = addCategory($additional_cat_name, $additional_cat_slug);
-
-                $additional_subcat_slug = reformCategorySlug($additional_subcat_name);
-                // addCategory won't add parent cat if category and subcat are the same
-                $additional_subcategory = addCategory($additional_cat_name, $additional_subcat_slug, $additional_category);
-
-                array_push($additional_subcats, intval($additional_subcategory));
+                array_push($additional_subcats, $additional_category, $additional_subcategory);
             }
         } else {
             $additional_subcat_name = $listing['ADDITIONALSUBCATS']['ITEM']['SUBCATNAME'];
             if ($additional_subcat_name != '') {
-                $additional_cat_name = $listing['ADDITIONALSUBCATS']['ITEM']['CATNAME'];
-                $additional_cat_slug = reformCategorySlug($additional_cat_name);
-                $additional_category = addCategory($additional_cat_name, $additional_cat_slug);
 
-                $additional_subcat_slug = reformCategorySlug($additional_subcat_name);
-                $additional_subcategory = addCategory(
-                    $additional_subcat_name,
-                    $additional_subcat_slug,
-                    $additional_category
-                );
-                array_push($additional_subcats, intval($additional_subcategory));
+                $additional_category = manageCategory([
+                    'name' => $listing['ADDITIONALSUBCATS']['ITEM']['CATNAME'] ?? '',
+                    'id' => $listing['ADDITIONALSUBCATS']['ITEM']['CATID'] ?? '',
+                ]);
+                $additional_subcategory = manageCategory([
+                    'name' => $listing['ADDITIONALSUBCATS']['ITEM']['SUBCATNAME'] ?? '',
+                    'id' => $listing['ADDITIONALSUBCATS']['ITEM']['SUBCATID'] ?? '',
+                    'parent' => $additional_category,
+                ]);
+
+                array_push($additional_subcats, $additional_category, $additional_subcategory);
             }
         }
     }
 
-    array_push($post_cats, intval($category), intval($subcategory));
-
-    foreach ($additional_subcats as $additional_subcat) {
-        array_push($post_cats, intval($additional_subcat));
+    if (! is_null($category)) {
+        $post_cats[] = $category;
+    }
+    if (! is_null($subcategory)) {
+        $post_cats[] = $subcategory;
     }
 
+    foreach ($additional_subcats as $additional_subcat) {
+        if (! is_null($additional_subcat)) {
+            $post_cats[] = $additional_subcat;
+        }
+    }
 
     $fields = array();
     $fields['listing_id'] = $listing['LISTINGID'];
