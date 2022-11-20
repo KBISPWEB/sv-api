@@ -683,78 +683,73 @@ function grab_fields($listing) {
 Events
 ========================================================================== */
 
-function update_event($event, $pid, $log_file) {
+function update_event($event, $pid, $log_file)
+{
+    $description = isset($event->DESCRIPTION) ? $event->DESCRIPTION : '';
+    $title = isset($event->TITLE) ? $event->TITLE : '';
 
-  $description						= isset($event->DESCRIPTION) ? $event->DESCRIPTION : '';
-  $title 									= isset($event->TITLE) ? $event->TITLE : '';
-  
-  $eventid                = isset($event->EVENTID) ? $event->EVENTID : '';
-
-  $fields = grab_event_fields($event);
-  update_event_standard_fields($pid, $fields);
-  wp_set_post_terms($pid, $fields['post_cats'], 'category');
-  update_event_imgaes($pid, $event, $title, $log_file);
-
-  $post_data = array(
-    'ID'            => $pid,
-    'post_title'    => $title, 
-    'post_content'  => $description
-  );
-  wp_update_post($post_data);
-
-  return [
-    true,
-    "WP Post ".$pid." updated.",
-    get_the_permalink($pid),
-    $pid
-  ];
-}
-
-function create_new_event($event, $log_file) {
-  $description						= isset($event->DESCRIPTION) ? $event->DESCRIPTION : '';
-  $title 									= isset($event->TITLE) ? $event->TITLE : '';
-
-
-  if ($title) {
-    
-    // Create the event post
-    $post = array(
-      'post_title'    => $title,
-      'post_author'   => 1,
-      'post_content'  => $description,
-      'post_status'   => 'publish',
-      'post_type'     => 'events'
-    );
-    $pid = wp_insert_post($post, true);  // Pass the value of $post to WordPress the insert function
-
+    $eventid = isset($event->EVENTID) ? $event->EVENTID : '';
 
     $fields = grab_event_fields($event);
     update_event_standard_fields($pid, $fields);
     wp_set_post_terms($pid, $fields['post_cats'], 'category');
-    file_put_contents( $log_file, "Before Process Images.".PHP_EOL, FILE_APPEND);
-    process_event_images($pid, $event, $title, $log_file);
+    update_event_imgaes($pid, $event, $title, $log_file);
+
+    $post_data = array(
+        'ID' => $pid,
+        'post_title' => $title,
+        'post_content' => $description
+    );
+    wp_update_post($post_data);
 
     return [
-      true,
-      "WP Post ".$pid." created.",
-      get_the_permalink($pid),
-      $pid
+        true,
+        "WP Post " . $pid . " updated.",
+        get_the_permalink($pid),
+        $pid
     ];
+}
 
-  }
-  else {
+function create_new_event($event, $log_file)
+{
+    $description = isset($event->DESCRIPTION) ? $event->DESCRIPTION : '';
+    $title = isset($event->TITLE) ? $event->TITLE : '';
 
-    file_put_contents( $log_file, "No Title.".PHP_EOL, FILE_APPEND);
 
-    return [
-      false, // status
-      "Error. Event has no title.", //message
-      false, // link
-      false  // pid
-    ];
+    if ($title) {
+        // Create the event post
+        $post = array(
+            'post_title' => $title,
+            'post_author' => 1,
+            'post_content' => $description,
+            'post_status' => 'publish',
+            'post_type' => 'events'
+        );
+        $pid = wp_insert_post($post, true);  // Pass the value of $post to WordPress the insert function
 
-  }
 
+        $fields = grab_event_fields($event);
+        update_event_standard_fields($pid, $fields);
+        wp_set_post_terms($pid, $fields['post_cats'], 'category');
+        file_put_contents($log_file, "Before Process Images." . PHP_EOL, FILE_APPEND);
+        process_event_images($pid, $event, $title, $log_file);
+
+        return [
+            true,
+            "WP Post " . $pid . " created.",
+            get_the_permalink($pid),
+            $pid
+        ];
+    } else {
+        file_put_contents($log_file, "No Title." . PHP_EOL, FILE_APPEND);
+
+        return [
+            false, // status
+            "Error. Event has no title.", //message
+            false, // link
+            false  // pid
+        ];
+    }
 }
 
 function update_event_imgaes($pid, $event, $title, $log_file) {
@@ -871,146 +866,146 @@ function process_event_images($pid, $event, $title, $log_file) {
 }
 
 function grab_event_fields($event) {
-  
-  $address 								= isset($event->ADDRESS) ? $event->ADDRESS : '';
-  $admission 							= isset($event->ADMISSION) ? $event->ADMISSION : '';
-  $city 									= isset($event->CITY) ? $event->CITY : '';
-  $contact 								= isset($event->CONTACT) ? $event->CONTACT : '';
-  $created 								= isset($event->CREATED) ? $event->CREATED : '';
-  $email 									= isset($event->EMAIL) ? $event->EMAIL : '';
-  $enddate 								= isset($event->ENDDATE) ? date('Ymd', strtotime($event->ENDDATE)) : '';
-  $endtime 								= isset($event->ENDTIME) ? $event->ENDTIME : '';
+    $address = isset($event->ADDRESS) ? $event->ADDRESS : '';
+    $admission = isset($event->ADMISSION) ? $event->ADMISSION : '';
+    $city = isset($event->CITY) ? $event->CITY : '';
+    $contact = isset($event->CONTACT) ? $event->CONTACT : '';
+    $created = isset($event->CREATED) ? $event->CREATED : '';
+    $email = isset($event->EMAIL) ? $event->EMAIL : '';
+    $enddate = isset($event->ENDDATE) ? date('Ymd', strtotime($event->ENDDATE)) : '';
+    $endtime = isset($event->ENDTIME) ? $event->ENDTIME : '';
 
-  // handle $eventdates
-  $eventid                = $event->EVENTID;
+    // handle $eventdates
+    $eventid = $event->EVENTID;
 
-  $eventString = '';
-  foreach ($event->EVENTDATES as $eventsDateContainer) {
-    foreach( $eventsDateContainer['EVENTDATE'] as $date) {
-      $eventString .= $date.',';
-    }
-  }
-
-  $eventString = rtrim($eventString, ",");
-
-  $eventdates 						= $eventString;
-
-  $eventregion 						= '';
-  $eventtype 							= isset($event->EVENTTYPE) ? $event->EVENTTYPE : '';
-  $featured 							= isset($event->FEATURED) ? $event->FEATURED : '';
-  $hostlistingid 					= isset($event->HOSTLISTINGID) ? $event->HOSTLISTINGID : '';
-  $hostname 							= isset($event->HOSTNAME) ? $event->HOSTNAME : '';
-  $listingid 							= isset($event->LISTINGID) ? $event->LISTINGID : '';
-  $location 							= isset($event->LOCATION) ? $event->LOCATION : '';
-
-  $map_coordinates 				= '';
-  if( isset( $event->LATITUDE ) && isset( $event->LONGITUDE ) ):
-    $map_coordinates 				= $event->LATITUDE . ',' . $event->LONGITUDE;
-  endif;
-
-  $mediafile 							= '';
-  $neverexpire 						= isset($event->NEVEREXPIRE) ? $event->NEVEREXPIRE : '';
-  $phone 									= isset($event->PHONE) ? $event->PHONE : '';
-  $recurrence 						= isset($event->RECURRENCE) ? $event->RECURRENCE : '';
-  $startdate 							= isset($event->STARTDATE) ? date('Ymd', strtotime($event->STARTDATE)) : '';
-  $starttime 							= isset($event->STARTTIME) ? $event->STARTTIME : '';
-  $state 									= isset($event->STATE) ? $event->STATE : '';
-  $times 									= isset($event->TIMES) ? $event->TIMES : '';
-  $website 								= isset($event->WEBSITE) ? $event->WEBSITE : '';
-  $zip 										= isset($event->ZIP) ? $event->ZIP : '';
-
-  $fields = array();
-  $fields['address'] = str_replace( [ "\\r\\n", "\\r", "\\n" ], PHP_EOL, $address );
-  $fields['admission'] = $admission;
-  $fields['city'] = $city;
-  $fields['contact'] = $contact;
-  $fields['created'] = $created;
-  $fields['email'] = $email;
-  $fields['enddate'] = $enddate;
-  $fields['endtime'] = $endtime;
-  $fields['eventdates'] = $eventdates;
-  $fields['eventid'] = $eventid;
-  $fields['eventregion'] = $eventregion;
-  $fields['eventtype'] = $eventtype;
-  $fields['featured'] = $featured;
-  $fields['hostlistingid'] = $hostlistingid;
-  $fields['hostname'] = $hostname;
-  $fields['listingid'] = $listingid;
-  $fields['location'] = $location;
-  $fields['map_coordinates'] = $map_coordinates;
-  $fields['mediafile'] = $mediafile;
-  $fields['neverexpire'] = $neverexpire;
-  $fields['phone'] = $phone;
-  $fields['recurrence'] = $recurrence;
-  $fields['startdate'] = $startdate;
-  $fields['starttime'] = $starttime;
-  $fields['state'] = $state;
-  $fields['times'] = $times;
-  $fields['website'] = $website;
-  $fields['zip'] = $zip;
-
-
-  // handle categories
-  $post_cats = array();
-  if (isset($event->EVENTCATEGORIES)) {
-    $wrapper = $event->EVENTCATEGORIES;
-    foreach ($wrapper as $wrapper2) {
-      foreach ($wrapper2 as $categoriesArray) {
-        foreach($categoriesArray as $categoryArray) {
-          $cat_name 							= $categoryArray['CATEGORYNAME'];
-          $cat_slug								= reformCategorySlug($cat_name);
-          $category 							= addCategory($cat_name, $cat_slug);
-          array_push( $post_cats, $category );
+    $eventString = '';
+    foreach ($event->EVENTDATES as $eventsDateContainer) {
+        foreach ($eventsDateContainer['EVENTDATE'] as $date) {
+            $eventString .= $date . ',';
         }
-      }
-      
     }
-  }
 
-  foreach ($event->EVENTCATEGORIES as $wrapper) {
-    foreach ($wrapper['EVENTCATEGORY'] as $category) {
-      $cat_name 							= $category['CATEGORYNAME'];
-      $cat_slug								= reformCategorySlug($cat_name);
-      $category 							= addCategory($cat_name, $cat_slug);
-      array_push( $post_cats, $category );
+    $eventString = rtrim($eventString, ",");
+
+    $eventdates = $eventString;
+
+    $eventregion = '';
+    $eventtype = isset($event->EVENTTYPE) ? $event->EVENTTYPE : '';
+    $featured = isset($event->FEATURED) ? $event->FEATURED : '';
+    $hostlistingid = isset($event->HOSTLISTINGID) ? $event->HOSTLISTINGID : '';
+    $hostname = isset($event->HOSTNAME) ? $event->HOSTNAME : '';
+    $listingid = isset($event->LISTINGID) ? $event->LISTINGID : '';
+    $location = isset($event->LOCATION) ? $event->LOCATION : '';
+
+    $map_coordinates = '';
+    if (isset($event->LATITUDE) && isset($event->LONGITUDE)):
+        $map_coordinates = $event->LATITUDE . ',' . $event->LONGITUDE;
+    endif;
+
+    $mediafile = '';
+    $neverexpire = isset($event->NEVEREXPIRE) ? $event->NEVEREXPIRE : '';
+    $phone = isset($event->PHONE) ? $event->PHONE : '';
+    $recurrence = isset($event->RECURRENCE) ? $event->RECURRENCE : '';
+    $startdate = isset($event->STARTDATE) ? date('Ymd', strtotime($event->STARTDATE)) : '';
+    $starttime = isset($event->STARTTIME) ? $event->STARTTIME : '';
+    $state = isset($event->STATE) ? $event->STATE : '';
+    $times = isset($event->TIMES) ? $event->TIMES : '';
+    $website = isset($event->WEBSITE) ? $event->WEBSITE : '';
+    $zip = isset($event->ZIP) ? $event->ZIP : '';
+
+    $fields = array();
+    $fields['address'] = str_replace(["\\r\\n", "\\r", "\\n"], PHP_EOL, $address);
+    $fields['admission'] = $admission;
+    $fields['city'] = $city;
+    $fields['contact'] = $contact;
+    $fields['created'] = $created;
+    $fields['email'] = $email;
+    $fields['enddate'] = $enddate;
+    $fields['endtime'] = $endtime;
+    $fields['eventdates'] = $eventdates;
+    $fields['eventid'] = $eventid;
+    $fields['eventregion'] = $eventregion;
+    $fields['eventtype'] = $eventtype;
+    $fields['featured'] = $featured;
+    $fields['hostlistingid'] = $hostlistingid;
+    $fields['hostname'] = $hostname;
+    $fields['listingid'] = $listingid;
+    $fields['location'] = $location;
+    $fields['map_coordinates'] = $map_coordinates;
+    $fields['mediafile'] = $mediafile;
+    $fields['neverexpire'] = $neverexpire;
+    $fields['phone'] = $phone;
+    $fields['recurrence'] = $recurrence;
+    $fields['startdate'] = $startdate;
+    $fields['starttime'] = $starttime;
+    $fields['state'] = $state;
+    $fields['times'] = $times;
+    $fields['website'] = $website;
+    $fields['zip'] = $zip;
+
+
+    // handle categories
+    $post_cats = array();
+    if (isset($event->EVENTCATEGORIES)) {
+        $wrapper = $event->EVENTCATEGORIES;
+        foreach ($wrapper as $wrapper2) {
+            foreach ($wrapper2 as $categoriesArray) {
+                foreach ($categoriesArray as $categoryArray) {
+                    $category = manageCategory([
+                        'name' => $categoryArray['CATEGORYNAME'] ?? '',
+                        'id' => $categoryArray['CATEGORYID'] ?? '',
+                    ]);
+                    array_push($post_cats, $category);
+                }
+            }
+        }
     }
-  }
 
-  $fields['post_cats'] = $post_cats;
-  $fields['category'] = $category ?? '';
+    foreach ($event->EVENTCATEGORIES as $wrapper) {
+        foreach ($wrapper['EVENTCATEGORY'] as $category) {
+            $category = manageCategory([
+                'name' => $categoryArray['CATEGORYNAME'] ?? '',
+                'id' => $categoryArray['CATEGORYID'] ?? '',
+            ]);
+            array_push($post_cats, $category);
+        }
+    }
 
-  return $fields;
+    $fields['post_cats'] = $post_cats;
+    $fields['category'] = $category ?? '';
+
+    return $fields;
 }
 
 function update_event_standard_fields($pid, $standard_fields) {
-  update_field('address', $standard_fields['address'], $pid);
-  update_field('admission', $standard_fields['admission'], $pid);
-  update_field('city', $standard_fields['city'], $pid);
-  update_field('contact', $standard_fields['contact'], $pid);
-  update_field('created', $standard_fields['created'], $pid);
-  update_field('email', $standard_fields['email'], $pid);
-  update_field('enddate', $standard_fields['enddate'], $pid);
-  update_field('endtime', $standard_fields['endtime'], $pid);
-  update_field('eventdates', $standard_fields['eventdates'], $pid);
-  update_field('eventid', $standard_fields['eventid'], $pid);
-  update_field('eventregion', $standard_fields['eventregion'], $pid);
-  update_field('eventtype', $standard_fields['eventtype'], $pid);
-  update_field('featured', $standard_fields['featured'], $pid);
-  update_field('hostlistingid', $standard_fields['hostlistingid'], $pid);
-  update_field('hostname', $standard_fields['hostname'], $pid);
-  update_field('listingid', $standard_fields['listingid'], $pid);
-  update_field('location', $standard_fields['location'], $pid);
-  update_field('map_coordinates', $standard_fields['map_coordinates'], $pid);
-  update_field('mediafile', $standard_fields['mediafile'], $pid);
-  update_field('neverexpire', $standard_fields['neverexpire'], $pid);
-  update_field('phone', $standard_fields['phone'], $pid);
-  update_field('recurrence', $standard_fields['recurrence'], $pid);
-  update_field('startdate', $standard_fields['startdate'], $pid);
-  update_field('starttime', $standard_fields['starttime'], $pid);
-  update_field('state', $standard_fields['state'], $pid);
-  update_field('times', $standard_fields['times'], $pid);
-  update_field('website', $standard_fields['website'], $pid);
-  update_field('zip', $standard_fields['zip'], $pid);
+    update_field('address', $standard_fields['address'], $pid);
+    update_field('admission', $standard_fields['admission'], $pid);
+    update_field('city', $standard_fields['city'], $pid);
+    update_field('contact', $standard_fields['contact'], $pid);
+    update_field('created', $standard_fields['created'], $pid);
+    update_field('email', $standard_fields['email'], $pid);
+    update_field('enddate', $standard_fields['enddate'], $pid);
+    update_field('endtime', $standard_fields['endtime'], $pid);
+    update_field('eventdates', $standard_fields['eventdates'], $pid);
+    update_field('eventid', $standard_fields['eventid'], $pid);
+    update_field('eventregion', $standard_fields['eventregion'], $pid);
+    update_field('eventtype', $standard_fields['eventtype'], $pid);
+    update_field('featured', $standard_fields['featured'], $pid);
+    update_field('hostlistingid', $standard_fields['hostlistingid'], $pid);
+    update_field('hostname', $standard_fields['hostname'], $pid);
+    update_field('listingid', $standard_fields['listingid'], $pid);
+    update_field('location', $standard_fields['location'], $pid);
+    update_field('map_coordinates', $standard_fields['map_coordinates'], $pid);
+    update_field('mediafile', $standard_fields['mediafile'], $pid);
+    update_field('neverexpire', $standard_fields['neverexpire'], $pid);
+    update_field('phone', $standard_fields['phone'], $pid);
+    update_field('recurrence', $standard_fields['recurrence'], $pid);
+    update_field('startdate', $standard_fields['startdate'], $pid);
+    update_field('starttime', $standard_fields['starttime'], $pid);
+    update_field('state', $standard_fields['state'], $pid);
+    update_field('times', $standard_fields['times'], $pid);
+    update_field('website', $standard_fields['website'], $pid);
+    update_field('zip', $standard_fields['zip'], $pid);
 }
 
 function clearOldLog($logFolder) {
