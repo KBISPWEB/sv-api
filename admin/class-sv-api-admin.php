@@ -2057,9 +2057,13 @@ class SV_Api_Admin {
 				if ( (!is_array($coupon['ADDR1'])) ) {
 					$coupon_array['address'] = $coupon['ADDR1'];
 				}
-				if ( (!is_array($coupon['CITY'])) ) {
-					$coupon_array['address'] .= $coupon['CITY'].", Maryland ";
-				}
+                if ((! is_array($coupon['CITY']))) {
+                    if ($coupon_array['address']) {
+                        $coupon_array['address'] .= ', ' . $coupon['CITY'] . ", Maryland ";
+                    } else {
+                        $coupon_array['address'] = $coupon['CITY'] . ", Maryland ";
+                    }
+                }
 				if ( (!is_array($coupon['ZIP'])) ) {
 					$coupon_array['address'] .= $coupon['ZIP'];
 				}
