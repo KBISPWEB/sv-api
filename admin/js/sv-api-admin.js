@@ -232,9 +232,14 @@
 			data: str,
 			// add a loader
 			success: function(data){
+				// $('#ajaxLoader').html("");
+				// $('.run_import_coupons_status').append('<br />Coupons import completed!')
+				// $("#submit_coupons.run_now_coupons").prop('disabled', false)
+				// console.log(data);
 				$('#ajaxLoader').html("");
-				$('.run_import_coupons_status').append('<br />Coupons import completed!')
-				$("#submit_coupons.run_now_coupons").prop('disabled', false)
+				$('.run_import_coupons_status').css('color', 'green');
+				$('.run_import_coupons_status').append(`<br />${data.data.message ? data.data.message : 'Import started!'}`);
+				$("#submit_coupons.run_now_coupons").prop('disabled', true);
 			},
 			beforeSend : function(){
 		    var svg = "<svg class='mx-auto ajax-window' width='80px'  height='80px'  xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='xMidYMid' class='lds-wedges'><g transform='translate(50,50)'><g transform='scale(0.7)'><g transform='translate(-50,-50)'><g transform='rotate(239.504 50 50)'><animateTransform attributeName='transform' type='rotate' calcMode='linear' values='0 50 50;360 50 50' keyTimes='0;1' dur='0.75s' begin='0s' repeatCount='indefinite'></animateTransform><path ng-attr-fill-opacity='{{config.opacity}}' ng-attr-fill='{{config.c1}}' d='M50 50L50 0A50 50 0 0 1 100 50Z' fill-opacity='0.8' fill='#005A55'></path></g><g transform='rotate(359.628 50.0024 50.0024)'> <animateTransform attributeName='transform' type='rotate' calcMode='linear' values='0 50 50;360 50 50' keyTimes='0;1' dur='1s' begin='0s' repeatCount='indefinite'></animateTransform><path ng-attr-fill-opacity='{{config.opacity}}' ng-attr-fill='{{config.c2}}' d='M50 50L50 0A50 50 0 0 1 100 50Z' transform='rotate(90 50 50)' fill-opacity='0.8' fill='#00C7CD'></path></g><g transform='rotate(119.752 50 50)'> <animateTransform attributeName='transform' type='rotate' calcMode='linear' values='0 50 50;360 50 50' keyTimes='0;1' dur='1.5s' begin='0s' repeatCount='indefinite'></animateTransform><path ng-attr-fill-opacity='{{config.opacity}}' ng-attr-fill='{{config.c3}}' d='M50 50L50 0A50 50 0 0 1 100 50Z' transform='rotate(180 50 50)' fill-opacity='0.8' fill='#ED592A'></path></g><g transform='rotate(239.876 50 50)'><animateTransform attributeName='transform' type='rotate' calcMode='linear' values='0 50 50;360 50 50' keyTimes='0;1' dur='3s' begin='0s' repeatCount='indefinite'></animateTransform> <path ng-attr-fill-opacity='{{config.opacity}}' ng-attr-fill='{{config.c4}}' d='M50 50L50 0A50 50 0 0 1 100 50Z' transform='rotate(270 50 50)' fill-opacity='0.8' fill='#F9B7B6'></path></g></g></g></g></svg>";
@@ -244,6 +249,10 @@
 		    $('#ajaxLoader').html(svg_markup);
 			},
 			error: function(jqXHR, textStatus, errorThrown) {
+				$('#ajaxLoader').html("");
+				$('.run_import_coupons_status').css('color', 'red');
+				$('.run_import_coupons_status').append(`<br />${textStatus}`);
+				$("#submit_coupons.run_now_coupons").prop('disabled', true);
 			},
 		});
 	}

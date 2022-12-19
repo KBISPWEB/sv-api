@@ -181,6 +181,8 @@ class SV_Api {
         $this->loader->add_action( 'wp_ajax_run_single_listing_import', $plugin_admin, 'run_single_listing_import' );
         $this->loader->add_action( 'wp_ajax_create_new_post_from_svid', $plugin_admin, 'create_new_post_from_svid' );
         $this->loader->add_action( 'wp_ajax_kill_cron', $plugin_admin, 'kill_cron' );
+
+        $this->loader->add_action('run_coupons_import_by_page', $plugin_admin, 'run_coupons_import_by_page');
     }
 
     /**
