@@ -22,6 +22,9 @@
  */
 class SV_Api_Admin {
 
+    const COUPONS_PAGE_LIMIT = 5;
+    const COUPONS_IMPORT_CRON_HOOK = 'run_coupons_import_by_page';
+
 	/**
 	 * The ID of this plugin.
 	 *
@@ -2001,33 +2004,94 @@ class SV_Api_Admin {
     /**
      * Running the coupons importing process
      */
-    public function run_bulk_coupons(): void {
-        // Start with the first page
-        $page = 0;
+    public function run_bulk_coupons():void {
 
-        // Getting coupons for this page from the SV API
-        $coupons = sv_api_connection('getCoupons', 50, $page);
-        if (! isset($coupons['COUPONS']['COUPON'])) {
-            return;
+        $new_task = $this->add_new_single_cron_task_for_coupons(1);
+
+        if ($new_task) {
+            wp_send_json_success([
+                'message' => 'The process of coupons import has been started',
+            ]);
         }
-        $coupons = $coupons['COUPONS']['COUPON'];
 
-        while (is_array($coupons) && ! ($page > 10)) {
+        wp_send_json_error([
+            'message' => 'The process of coupons import is already going!',
+        ]);
+    }
+
+    /**
+     * Adds a single CRON job task for importing the passed page number of coupons SV API response list
+     * @param int $page
+     * @return bool
+     */
+    private function add_new_single_cron_task_for_coupons(int $page = 0):bool {
+        $pages_limit = self::COUPONS_PAGE_LIMIT;
+
+        if( ! wp_next_scheduled( self::COUPONS_IMPORT_CRON_HOOK ) && $page <= $pages_limit ) {
+            $event = wp_schedule_single_event(time() + 1, self::COUPONS_IMPORT_CRON_HOOK, [
+                'page' => $page,
+            ]);
+            if (! $event) {
+                update_option('current_coupons_import_page', -1);
+            }
+
+            return $event;
+        }
+
+        update_option('current_coupons_import_page', -1);
+
+        return false;
+    }
+
+    /**
+     * Returns a page number that is being processed in a current coupons import task
+     * @return int
+     */
+    public static function get_current_page_for_coupons_import(): int {
+        return (int) get_option('current_coupons_import_page', -1);
+    }
+
+    /**
+     * Returns a page limit for the coupons import
+     * @return int
+     */
+    public static function get_page_limits_for_coupons_import(): int {
+        return self::COUPONS_PAGE_LIMIT;
+    }
+
+    /**
+     * Importing coupons from the passed page number to WordPress. Typically, is being used as a CRON job
+     * @param int $page
+     */
+    public function run_coupons_import_by_page(int $page):void {
+        $page_size = 50;
+
+        update_option('current_coupons_import_page', $page);
+
+        try {
+            // Getting coupons for this page from the SV API
+            $coupons = sv_api_connection('getCoupons', $page_size, $page);
+            if (! isset($coupons['COUPONS']['COUPON']) || !is_array($coupons['COUPONS']['COUPON']) || empty($coupons['COUPONS']['COUPON'])) {
+                update_option('current_coupons_import_page', -1);
+                return;
+            }
+            $coupons = $coupons['COUPONS']['COUPON'];
+
+            $processed_coupons = [];
             foreach ($coupons as $coupon) {
 
                 // All the needed data for this coupon
                 $coupon_array = $this->collect_single_coupon_data($coupon);
                 // Add/Update the coupon
-                $this->update_or_add_single_coupon($coupon_array);
+                $processed_coupons[] = $this->update_or_add_single_coupon($coupon_array);
             }
 
-            // Moving forward to the next page
-            $page++;
-
-            // Collecting coupons for the next page
-            $couponResponse = sv_api_connection('getCoupons', 50, $page);
-            $coupons = $couponResponse['COUPONS']['COUPON'] ?? false;
+            // Adding a new cron task for the next page
+            $this->add_new_single_cron_task_for_coupons($page + 1);
+        } catch (Throwable $e) {
+            update_option('current_coupons_import_page', -1);
         }
+
     }
 
     /**
@@ -2136,11 +2200,12 @@ class SV_Api_Admin {
     /**
      * Update an existing coupon or adding a new one depending on the passed data
      * @param array $coupon_data
+     * @return int Coupon ID
      */
-    public function update_or_add_single_coupon(array $coupon_data) {
+    public function update_or_add_single_coupon(array $coupon_data): int {
         $categories = $this->update_or_add_coupon_categories((array) $coupon_data['categories']);
 
-        $existing_coupon = get_post([
+        $existing_coupon = get_posts([
             'post_type' => 'coupons',
             'post_status' => ['publish', 'trash'],
             'posts_per_page' => 1,
@@ -2149,14 +2214,16 @@ class SV_Api_Admin {
                     'key' => 'offer_id',
                     'value' => $coupon_data['coupon_id'],
                     'compare' => '=',
+                    'type' => 'NUMERIC',
                 ],
             ],
         ]);
+
         $existing_coupon_id = !empty($existing_coupon) ? $existing_coupon[0]->ID : null;
         if (! is_null($existing_coupon_id)) {
-            $this->update_single_coupon($coupon_data, $existing_coupon_id, $categories);
+            return $this->update_single_coupon($coupon_data, $existing_coupon_id, $categories);
         } else {
-            $this->add_single_coupon($coupon_data, $categories);
+            return $this->add_single_coupon($coupon_data, $categories);
         }
     }
 

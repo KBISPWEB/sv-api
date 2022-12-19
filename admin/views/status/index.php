@@ -41,6 +41,9 @@
 
     $first_run = $last_run && $failure_check ? true : false; // check if import has been run before.
 
+
+	$current_coupons_page_import = SV_Api_Admin::get_current_page_for_coupons_import();
+	$coupons_image_page_limit    = SV_Api_Admin::get_page_limits_for_coupons_import();
     ?>
     <form action="options.php" method="post">
     <?php
@@ -315,7 +318,11 @@
         <?php
     else:
     ?>
-        <div class="notice notice-error inline" style="margin-top: 2em;"><p>Please enter all Events <a href="?page=sv-api&tab=settings_options">API Settings</a></p></div>
+        <div class="notice notice-error inline" style="margin-top: 2em;">
+			<p>
+				Please enter all Events <a href="?page=sv-api&tab=settings_options">API Settings</a>
+			</p>
+		</div>
     <?php
     endif; // $check_events_settings
         ?>
@@ -325,9 +332,16 @@
         <table>
             <tbody>
                 <tr>
-                    <th cols="2">
+                    <th cols="2" style="text-align:left;">
                         <?php
-                            submit_button( 'Run Coupons Import', 'primary run_now_coupons', 'submit_coupons', false );
+							if ($current_coupons_page_import > 0) {
+                                submit_button( 'Run Coupons Import', 'primary run_now_coupons', 'submit_coupons', false, [
+										'disabled' => 'true',
+								] );
+								printf('<p>Sorry, the import process is currently in progress and cannot be interrupted. The current page being imported is page %d of a total of %d pages. Please try again later.</p>', $current_coupons_page_import, $coupons_image_page_limit);
+							} else {
+                                submit_button( 'Run Coupons Import', 'primary run_now_coupons', 'submit_coupons', false );
+							}
                         ?>
                     </th>
                 </tr>
