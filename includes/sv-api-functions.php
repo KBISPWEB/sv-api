@@ -1448,4 +1448,61 @@ function xml_entity_decode($s) {
     $s = html_entity_decode($s, ENT_HTML5|ENT_NOQUOTES, 'UTF-8'); // PHP 5.3+
     $s = str_replace($XSAFENTITIES,$XENTITIES,$s);
     return $s;
- }  
+ }
+
+function manageCategory($categoryData = [], $categorySlug = 'category') {
+    $categoryId = $categoryData['id'] ? (int)$categoryData['id'] : null;
+    $categoryName = $categoryData['name'] ?? null;
+    $categoryParentId = $categoryData['parent'] ?? null;
+    if (! $categoryId || ! $categoryName) {
+        return null;
+    }
+
+    $args = [
+        'taxonomy' => $categorySlug,
+        'fields' => 'ids',
+        'hide_empty' => false,
+        'name' => $categoryName,
+        'number' => 1,
+        'meta_query' => [
+            [
+                'key' => 'external_id',
+                'value' => $categoryId,
+                'compare' => '=',
+                'type' => 'NUMERIC',
+            ],
+        ],
+    ];
+    if ($categoryParentId) {
+        $parentCategory = get_term($categoryParentId, $categorySlug);
+
+        if (is_wp_error($parentCategory) || ! $parentCategory || $parentCategory->name === esc_html(
+                $categoryName
+            )) {
+            return null;
+        }
+
+        $args = array_merge($args, [
+            'parent' => $categoryParentId,
+        ]);
+    }
+
+    $category = get_terms($args);
+    if (is_wp_error($category) || ! is_array($category) || empty($category)) {
+        $categoryId = addNewCategory($categoryId, $categoryName, $categoryParentId);
+    } else {
+        $categoryId = (int) $category[0];
+    }
+
+    return $categoryId;
+}
+
+function addNewCategory($id, $name, $parent = null) {
+    $categoryId = wp_create_category($name, (int) $parent);
+    if (is_wp_error($categoryId)) {
+        return null;
+    }
+    update_term_meta($categoryId, 'external_id', $id);
+
+    return (int) $categoryId;
+}
