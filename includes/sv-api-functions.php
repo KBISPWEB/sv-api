@@ -698,7 +698,8 @@ function update_event($event, $pid, $log_file)
     $post_data = array(
         'ID' => $pid,
         'post_title' => $title,
-        'post_content' => $description
+        'post_content' => $description,
+        'post_status' => 'publish',
     );
     wp_update_post($post_data);
 
@@ -878,9 +879,11 @@ function grab_event_fields($event) {
     // handle $eventdates
     $eventid = $event->EVENTID;
 
+    $dates = [];
     $eventString = '';
     foreach ($event->EVENTDATES as $eventsDateContainer) {
         foreach ($eventsDateContainer['EVENTDATE'] as $date) {
+            $dates[] = $date;
             $eventString .= $date . ',';
         }
     }
@@ -912,6 +915,15 @@ function grab_event_fields($event) {
     $times = isset($event->TIMES) ? $event->TIMES : '';
     $website = isset($event->WEBSITE) ? $event->WEBSITE : '';
     $zip = isset($event->ZIP) ? $event->ZIP : '';
+
+    // If we don't have specific start and end dates for an event, but we do have multiple dates for the event, we can use those dates to determine the range of dates during which the event will take place.
+    if (! $startdate && ! empty($dates)) {
+        $startdate = $dates[0];
+    }
+    if (! $enddate && ! empty($dates)) {
+        $enddate = $dates[count($dates) - 1];
+    }
+
 
     $fields = array();
     $fields['address'] = str_replace(["\\r\\n", "\\r", "\\n"], PHP_EOL, $address);
@@ -1169,101 +1181,95 @@ function process_events($page = 0, $type = 'manual') {
     $existing_event_ids = existing_event_ids();
 
     $processed_events = array();
-    $api_pagesize     = 10;
+    $api_pagesize     = 5;
 
-    $firstCondition  = ( $page + 1 ) * $api_pagesize;
-    $secondCondition = $page * $api_pagesize;
+    // Starting index for the current page
+    $startIndex = $page * $api_pagesize;
 
     // List of events ids that have been processed
     $processed_events_ids = [];
 
-    foreach ( $events as $index => $eventArray ):
+    // Slicing whole events array on pages
+    $events_slice = array_slice( $events, $startIndex, $api_pagesize );
 
-        if ( $index < $firstCondition && $index >= $secondCondition ):
+    foreach ( $events_slice as $index => $eventArray ) {
+        $event = (object) $eventArray;
+        $processed_count++;
 
-            // error_log(print_r("Index: ".$index, true));
-            // error_log(print_r("Processing...", true));
+        $eventid = ! empty(strval($event->EVENTID)) ? strval($event->EVENTID) : '';
+        $eventTitle = $event->TITLE ?? '';
 
-            $event = (object) $eventArray;
-            $processed_count ++;
+        file_put_contents($log_file, "Processing..." . PHP_EOL . "Post ID: " . $eventid . PHP_EOL, FILE_APPEND);
+        file_put_contents($log_file, "Event Title: " . $eventTitle . PHP_EOL, FILE_APPEND);
 
-            $eventid    = !empty( strval( $event->EVENTID ) ) ? strval( $event->EVENTID ) : '';
-            $eventTitle = $event->TITLE ?? '';
+        // Add new event
+        if ( ! in_array( $eventid, $existing_event_ids ) ) {
+            file_put_contents( $log_file, "Create New Event." . PHP_EOL, FILE_APPEND );
 
-            file_put_contents( $log_file, "Processing...".PHP_EOL."Post ID: ".$eventid.PHP_EOL, FILE_APPEND);
-            file_put_contents( $log_file, "Event Title: ".$eventTitle.PHP_EOL, FILE_APPEND);
+            array_push( $existing_event_ids, $eventid );
+            $create_new_event_result = create_new_event( $event, $log_file );
 
-            // Add new event
-            if ( !in_array($eventid, $existing_event_ids) ):
+            if ( $create_new_event_result[0] ) {
+                $added_count++;
 
-                file_put_contents( $log_file, "Create New Event.".PHP_EOL, FILE_APPEND);
+                $return_pid     = $create_new_event_result[3];
+                $return_message = $create_new_event_result[1];
 
-                array_push($existing_event_ids, $eventid);
-                $create_new_event_result = create_new_event($event, $log_file);
+                $processed_events[ $return_pid ] = [
+                    $event->TITLE,
+                    $return_message,
+                ];
 
-                if ( $create_new_event_result[0] ) {
-                    $added_count++;
+                $processed_events_ids[] = $return_pid;
+            } else {
+                $error_count++;
+                $return_message = $create_new_event_result[1];
 
-                    $return_pid     = $create_new_event_result[3];
-                    $return_message = $create_new_event_result[1];
+                $processed_events[ $eventid ] = [
+                    $event->TITLE,
+                    $return_message,
+                ];
+            }
+        } else {
+            file_put_contents( $log_file, "Update Event." . PHP_EOL, FILE_APPEND );
 
-                    $processed_events[$return_pid] = [
+            $existant_event = get_posts( [
+                'post_type'      => 'events',
+                'meta_key'       => 'eventid',
+                'post_status'    => 'any',
+                'meta_value'     => $eventid,
+                'posts_per_page' => 1,
+                'fields'         => 'ids',
+                'type'           => 'NUMERIC',
+            ] );
+
+            if ( isset( $existant_event[0] ) && $existant_event[0] ) {
+                $update_event_result = update_event($event, $existant_event[0], $log_file);
+
+                if ( $update_event_result[0] ) {
+                    $updated_count ++;
+
+                    $return_pid     = $update_event_result[3];
+                    $return_message = $update_event_result[1];
+
+                    $processed_events[ $return_pid ] = [
                         $event->TITLE,
-                        $return_message
+                        $return_message,
                     ];
-
-                    $processed_events_ids[] = $return_pid;
                 } else {
-                    $error_count++;
-                    $return_message = $create_new_event_result[1];
-
-                    $processed_events[$eventid] = [
+                    $error_count ++;
+                    $processed_events[ $eventid ] = [
                         $event->TITLE,
-                        $return_message
+                        "Failed to update event. PID: " . $existant_event[0],
                     ];
                 }
 
-            else :
+                $processed_events_ids[] = $existant_event[0];
+            }
 
-                file_put_contents( $log_file, "Update Event.".PHP_EOL, FILE_APPEND);
+        } // add/update event
 
-                $existant_event = get_posts( [
-                    'post_type'      => 'events',
-                    'meta_key'       => 'eventid',
-                    'meta_value'     => $eventid,
-                    'posts_per_page' => 1,
-                    'fields'         => 'ids'
-                ] );
-
-                if ( $existant_event[0] ) {
-                    $update_event_result = update_event( $event, $existant_event[0], $log_file );
-
-                    if ($update_event_result[0]) {
-                        $updated_count ++;
-
-                        $return_pid     = $update_event_result[3];
-                        $return_message = $update_event_result[1];
-
-                        $processed_events[$return_pid] = [
-                            $event->TITLE,
-                            $return_message
-                        ];
-                    } else {
-                        $error_count ++;
-                        $processed_events[$eventid] = [
-                            $event->TITLE,
-                            "Failed to update event. PID: ".$existant_event[0]
-                        ];
-                    }
-
-                    $processed_events_ids[] = $existant_event[0];
-                }
-
-            endif; // add/update event
-
-        endif; // paging
-
-    endforeach; //$events
+    } //$events
 
     update_option( 'sv_api_events_processed', $processed_count );
     update_option( 'sv_api_events_updated',  $updated_count );
@@ -1281,63 +1287,55 @@ function process_events($page = 0, $type = 'manual') {
 
     update_option( 'sv_api_events_results_count', $results_count );
 
-    // error_log(print_r("Process Count: ".$processed_count, true));
-    // error_log(print_r("Results Count: ".$results_count, true));
+    $total_pages       = ceil( $results_count / $api_pagesize );
+    $rough_percent     = ( $page + 1 ) / $total_pages;
+    $percent_processed = number_format( ( 100 * (float) $rough_percent ), 2, '.', '' );
+    $has_more          = $processed_count < $results_count;
 
-    $roughPercent = $processed_count/$results_count;
-    $percentProcessed = number_format((float)$roughPercent, 2, '.', '');
-    $hasMore = $processed_count < $results_count;
-    $num_calls = ceil($results_count / $api_pagesize);
-
-    if ( !$hasMore ) {
+    if ( ! $has_more ) {
         update_events_status();
     }
 
     $page = $page + 1;
 
     $html .= '<div style="margin-top: 10px; margin-bottom: 10px;">'.
-              'Page '. $page . ' of ' . $num_calls . ' completed...'.
+              'Page '. $page . ' of ' . $total_pages . ' completed...'.
             '</div>';
 
     // TODO fill this out
     $data = array(
         'page'    => $page,
-        'percent' => $percentProcessed,
-        'hasMore' => $hasMore,
-        'logData' => $html
+        'percent' => $percent_processed,
+        'hasMore' => $has_more,
+        'logData' => $html,
     );
 
     return $data;
 }
 
 function update_events_status() {
+    global $wpdb;
+    
     // Grabbing all the current events
     $existing_events_ids = get_all_current_events();
     // Make it as array of wp IDs
     $existing_events_ids = array_map(
-        function($event) {
+        function( $event ) {
             return $event->ID;
         },
         $existing_events_ids
     );
     // Grab all the listings processed from the last import
-    $processed_events_ids = get_option('sv_api_events_processed_ids', []);
-    if (!is_array($processed_events_ids) || empty($processed_events_ids)) {
+    $processed_events_ids = get_option( 'sv_api_events_processed_ids', [] );
+    if ( ! is_array( $processed_events_ids ) || empty( $processed_events_ids ) ) {
         return;
     }
+    
+    $non_relevant_events = array_diff( $existing_events_ids, $processed_events_ids );
 
-    foreach ($existing_events_ids as $event_id) {
-        // If this listing is processed do nothing
-        if (in_array($event_id, $processed_events_ids)) {
-            continue;
-        }
-
-        // Otherwise, make it as draft
-        wp_update_post([
-            'ID' => $event_id,
-            'post_status' => 'draft',
-        ], true);
-    }
+    $new_status = 'draft';
+    $query      = "UPDATE $wpdb->posts SET post_status = %s WHERE ID IN (" . implode(',', $non_relevant_events) . ")";
+    $wpdb->query( $wpdb->prepare( $query, $new_status ) );
 }
 
 function process_listings($listings, $existing_listing_ids, $existing_companies) {
