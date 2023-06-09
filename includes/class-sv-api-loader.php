@@ -198,7 +198,7 @@ class SV_Api_Loader {
             require_once(ABSPATH . '/wp-admin/includes/taxonomy.php');
             $check_cat_exists = get_term_by('slug', $cat_slug, $tax);
 
-            if ($check_cat_exists == false):
+            if ($check_cat_exists == false) {
                 $cat_array = array(
                     'cat_name' => $cat_name,
                     'category_description' => '',
@@ -207,9 +207,9 @@ class SV_Api_Loader {
                     'taxonomy' => $tax,
                 );
                 $cat_id = wp_insert_category($cat_array);
-            else:
+            } else {
                 $cat_id = $check_cat_exists->term_id;
-            endif;
+            }
 
             return $cat_id;
         } // addCategory
@@ -219,9 +219,9 @@ class SV_Api_Loader {
             $companies = get_all_current_listings();
             $existing_companies = array();
             foreach ($companies as $company) {
-                if (! in_array($company->company, $existing_companies)):
+                if (! in_array($company->company, $existing_companies)) {
                     array_push($existing_companies, $company->company);
-                endif;
+                }
             }
             // return $get_existing_listing_ids->request;
             return $existing_companies;
@@ -232,9 +232,9 @@ class SV_Api_Loader {
             $listings = get_all_current_listings();
             $existing_listing_ids = array();
             foreach ($listings as $listing) {
-                if (! in_array($listing->listing_id, $existing_listing_ids)):
+                if (! in_array($listing->listing_id, $existing_listing_ids)) {
                     array_push($existing_listing_ids, $listing->listing_id);
-                endif;
+                }
             }
             return $existing_listing_ids;
         } // existing_listing_ids
@@ -244,9 +244,9 @@ class SV_Api_Loader {
             $events = get_all_current_events();
             $existing_event_ids = array();
             foreach ($events as $event) {
-                if (! in_array($event->eventid, $existing_event_ids)):
+                if (! in_array($event->eventid, $existing_event_ids)) {
                     array_push($existing_event_ids, $event->eventid);
-                endif;
+                }
             }
             return $existing_event_ids;
         } // existing_event_ids
@@ -257,12 +257,12 @@ class SV_Api_Loader {
             $options = get_option('sv_api_setting_options');
             $settings = array('api_url', 'api_username', 'api_password');
 
-            foreach ($settings as $value):
-                if ($options[$value] == ''):
+            foreach ($settings as $value) {
+                if (!isset($options[$value]) || empty($options[$value])) {
                     $verdict = false;
                     break;
-                endif;
-            endforeach;
+                }
+            }
 
             return $verdict;
         } // check_listings_settings
@@ -274,12 +274,12 @@ class SV_Api_Loader {
             $options = get_option('sv_api_setting_options');
             $settings = array('events_api_url', 'events_api_key');
 
-            foreach ($settings as $value):
-                if ($options[$value] == ''):
+            foreach ($settings as $value) {
+                if (!isset($options[$value]) || empty($options[$value])) {
                     $verdict = false;
                     break;
-                endif;
-            endforeach;
+                }
+            }
 
             return $verdict;
         } // check_events_settings
@@ -357,21 +357,21 @@ class SV_Api_Loader {
             $data = 'Username=' . $api_username;
             $data .= '&Password=' . $api_password;
             $data .= '&Action=' . $api_action;
-            if ($api_action == 'getListings'):
+            if ($api_action == 'getListings') {
                 $data .= '&Pagesize=' . $api_pagesize;
                 $data .= '&Pagenum=' . $api_pagenum;
                 $data .= '&Displayamenities=1';
-            elseif ($api_action == 'getListing'):
-                if ($listing_id != ''):
+            } elseif ($api_action == 'getListing') {
+                if ($listing_id != '') {
                     $data .= '&ListingID=' . $listing_id;
                     $data .= '&updateHits=0';
-                else:
+                } else {
                     $no_listing_id = true;
-                endif;
-            elseif ($api_action == 'getCoupons'):
+                }
+            } elseif ($api_action == 'getCoupons') {
                 $data .= '&Pagesize=' . $api_pagesize;
                 $data .= '&Pagenum=' . $api_pagenum;
-            endif;
+            }
             // $data = 'Username=' . $api_username . '&Password=' . $api_password . '&Action=' . $api_action . '&Pagesize=50&Pagenum=1&Displayamenities=1';
 
             $ch = curl_init();
@@ -397,357 +397,356 @@ class SV_Api_Loader {
                 $response = json_decode($json, true);
             }
 
-            if ($api_action == 'getListings' && $response):
+            if ($api_action == 'getListings' && $response) {
                 $haserrors = $response['REQUESTSTATUS']['HASERRORS'];
                 $results_count = $response['REQUESTSTATUS']['RESULTS'];
-            endif;
+            }
 
             //results_info
             //has_errors
 
             // return $result;
 
-            if ($haserrors || $result_http_code != '200'):
-                if ($haserrors):
+            if ($haserrors || $result_http_code != '200') {
+                if ($haserrors) {
                     update_option('sv_api_failure_message', $response['REQUESTSTATUS']['ERRORS']['ITEM']['MESSAGE']);
-                    if (! empty($response['REQUESTSTATUS']['ERRORS']['ITEM']['DETAIL'])):
+                    if (! empty($response['REQUESTSTATUS']['ERRORS']['ITEM']['DETAIL'])) {
                         update_option('sv_api_failure_detail', $response['REQUESTSTATUS']['ERRORS']['ITEM']['DETAIL']);
-                    endif;
-                else:
+                    } else {
+                        update_option('sv_api_failure_message', 'http_code');
+                        update_option('sv_api_failure_detail', $result_http_code);
+                    }
+                    update_option('sv_api_failure', 'yes');
+                    return 'error';
+                } elseif ($no_listing_id) {
                     update_option('sv_api_failure_message', 'http_code');
                     update_option('sv_api_failure_detail', $result_http_code);
-                endif;
-                update_option('sv_api_failure', 'yes');
-                return 'error';
-            elseif ($no_listing_id):
-                update_option('sv_api_failure_message', 'http_code');
-                update_option('sv_api_failure_detail', $result_http_code);
-                update_option('sv_api_failure', 'yes');
-            else:
-                update_option('sv_api_failure_message', 'No Failure.');
-                update_option('sv_api_failure', 'no');
-                if ($api_action == 'getListings'):
-                    update_option('sv_api_results_count', $results_count);
-                endif;
-                return $response;
-            endif;
-        } // sv_api_connection
+                    update_option('sv_api_failure', 'yes');
+                } else {
+                    update_option('sv_api_failure_message', 'No Failure.');
+                    update_option('sv_api_failure', 'no');
+                    if ($api_action == 'getListings') {
+                        update_option('sv_api_results_count', $results_count);
+                    }
+                    return $response;
+                }
+            } // sv_api_connection
 
-        // EVENTS CONNECTION
-        function sv_events_api_connection()
-        {
-            $haserrors = false;
+            // EVENTS CONNECTION
+            function sv_events_api_connection()
+            {
+                $haserrors = false;
 
-            $options = get_option('sv_api_setting_options');
-            $events_api_url = rtrim($options['events_api_url'], '/') . '/';
-            $events_api_key = $options['events_api_key'];
+                $options = get_option('sv_api_setting_options');
+                $events_api_url = rtrim($options['events_api_url'], '/') . '/';
+                $events_api_key = $options['events_api_key'];
 
-            $events_api_url .= '?apikey=';
-            // $events_api_url .= 'feeds/events.cfm?apikey';
-            $events_api_url .= $events_api_key;
+                $events_api_url .= '?apikey=';
+                // $events_api_url .= 'feeds/events.cfm?apikey';
+                $events_api_url .= $events_api_key;
 
-            $data = 'Length=1000';
+                $data = 'Length=1000';
 
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-            curl_setopt($ch, CURLOPT_URL, $events_api_url);
-            $result = curl_exec($ch);
-            $result_info = curl_getinfo($ch);
-            curl_close($ch);
+                $ch = curl_init();
+                curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($ch, CURLOPT_POST, true);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+                curl_setopt($ch, CURLOPT_URL, $events_api_url);
+                $result = curl_exec($ch);
+                $result_info = curl_getinfo($ch);
+                curl_close($ch);
 
-            $resultNoApostrophe = str_replace("&#x92;", "'", $result);
-            $xmlArray = XMLtoArray($resultNoApostrophe);
-            $response = $xmlArray['RESULTS'];
+                $resultNoApostrophe = str_replace("&#x92;", "'", $result);
+                $xmlArray = XMLtoArray($resultNoApostrophe);
+                $response = $xmlArray['RESULTS'];
 
-            $haserrors = $response['SUCCESS'] == 'Yes' ? false : true;
-            if ($haserrors):
-                update_option(
-                    'sv_api_events_failure_message',
-                    isset($response['MESSAGE']) ? 'No Failure Specified' : $response['MESSAGE']
-                );
-                update_option('sv_api_events_failure', true);
-                return 'error';
-            else:
-                update_option('sv_api_events_failure', false);
+                $haserrors = $response['SUCCESS'] == 'Yes' ? false : true;
+                if ($haserrors) {
+                    update_option(
+                        'sv_api_events_failure_message',
+                        isset($response['MESSAGE']) ? 'No Failure Specified' : $response['MESSAGE']
+                    );
+                    update_option('sv_api_events_failure', true);
+                    return 'error';
+                } else {
+                    update_option('sv_api_events_failure', false);
 
-                $eventsArray = $response['EVENTS']['EVENT'];
+                    $eventsArray = $response['EVENTS']['EVENT'];
 
-                update_option('baltimore_crm_api_events_results_count', count($eventsArray));
-                return $eventsArray;
-            endif;
-        } //sv_events_api_connection
+                    update_option('baltimore_crm_api_events_results_count', count($eventsArray));
+                    return $eventsArray;
+                }
+            } //sv_events_api_connection
 
-        function reformCategorySlug($string)
-        {
-            //Lower case everything
-            $string = strtolower($string);
-            //Make alphanumeric (removes all other characters)
-            $string = preg_replace("/[^a-z0-9_\s-]/", "", $string);
-            //Clean up multiple dashes or whitespaces
-            $string = preg_replace("/[\s-]+/", " ", $string);
-            //Convert whitespaces and underscore to dash
-            $string = preg_replace("/[\s_]/", "-", $string);
-            return $string;
-        } // reformCategorySlug
+            function reformCategorySlug($string)
+            {
+                //Lower case everything
+                $string = strtolower($string);
+                //Make alphanumeric (removes all other characters)
+                $string = preg_replace("/[^a-z0-9_\s-]/", "", $string);
+                //Clean up multiple dashes or whitespaces
+                $string = preg_replace("/[\s-]+/", " ", $string);
+                //Convert whitespaces and underscore to dash
+                $string = preg_replace("/[\s_]/", "-", $string);
+                return $string;
+            } // reformCategorySlug
 
-        function get_images($listing_id)
-        {
-            $response = sv_api_connection('getListing', 0, 0, $listing_id);
+            function get_images($listing_id)
+            {
+                $response = sv_api_connection('getListing', 0, 0, $listing_id);
 
-            $images_list = array();
+                $images_list = array();
 
-            $images = array();
-            $images = $response['LISTING']['IMAGES']['ITEM'];
+                $images = array();
+                $images = $response['LISTING']['IMAGES']['ITEM'];
 
-            if (is_array($images[0])):
-                foreach ($images as $image):
-                    $images_list[] = $image['IMGPATH'] . $image['MEDIAFILE'];
-                endforeach;
-            else:
-                $images_list[] = $images['IMGPATH'] . $images['MEDIAFILE'];
-            endif;
+                if (is_array($images[0])) {
+                    foreach ($images as $image) {
+                        $images_list[] = $image['IMGPATH'] . $image['MEDIAFILE'];
+                    }
+                } else {
+                    $images_list[] = $images['IMGPATH'] . $images['MEDIAFILE'];
+                }
 
-            return $images_list;
-        } // get_images
+                return $images_list;
+            } // get_images
 
-        function handle_images($image_list = null, $pid = null, $sort_company = '', $meta_key = 'media')
-        {
-            if ($image_list && $pid):
+            function handle_images($image_list = null, $pid = null, $sort_company = '', $meta_key = 'media')
+            {
+                if ($image_list && $pid) {
+                    $mid = $meta_key == 'media' ? array() : '';
 
-                $mid = $meta_key == 'media' ? array() : '';
+                    $index_for_image_list = 1;
+                    foreach ($image_list as $image_url) {
+                        $id = saveImageToWP($image_url, $pid, $sort_company);
+                        if ($meta_key == 'media') {
+                            array_push($mid, $id);
+                        } else {
+                            $mid = $id;
+                        }
+                    }
+                }
 
-                $index_for_image_list = 1;
-                foreach ($image_list as $image_url) {
-                    $id = saveImageToWP($image_url, $pid, $sort_company);
-                    if ($meta_key == 'media') {
+                update_post_meta($pid, $meta_key, $mid);
+            } // handle_images
+
+            function BW_handle_images($image_list = null, $pid = null, $sort_company = '')
+            {
+                if ($image_list && $pid) {
+                    $index_for_image_list = 1;
+                    $added_featured = false;
+                    foreach ($image_list as $image_url) {
+                        $id = saveImageToWP($image_url, $pid, $sort_company);
+
+                        if (! $added_featured) { // set first image to be thumbnail
+                            set_post_thumbnail($pid, $id);
+                            $added_featured = true;
+                        }
+
                         array_push($mid, $id);
-                    } else {
-                        $mid = $id;
                     }
                 }
-            endif;
 
-            update_post_meta($pid, $meta_key, $mid);
-        } // handle_images
+                update_post_meta($pid, 'media', $mid);
+            } // handle_images
 
-        function BW_handle_images($image_list = null, $pid = null, $sort_company = '')
-        {
-            if ($image_list && $pid):
-
-                $index_for_image_list = 1;
-                $added_featured = false;
-                foreach ($image_list as $image_url) {
-                    $id = saveImageToWP($image_url, $pid, $sort_company);
-
-                    if (! $added_featured) { // set first image to be thumbnail
-                        set_post_thumbnail($pid, $id);
-                        $added_featured = true;
-                    }
-
-                    array_push($mid, $id);
+            function BW_upload_images($pid = null, $images = null, $premium_images = null)
+            {
+                if (! $pid) {
+                    return;
                 }
-            endif;
 
-            update_post_meta($pid, 'media', $mid);
-        } // handle_images
+                $gallery = get_post_meta($pid, 'media');
+                $gallery_ids = $gallery[0] ?? [];
+                $gallery_sv_ids = array();
 
-        function BW_upload_images($pid = null, $images = null, $premium_images = null)
-        {
-            if (! $pid) {
-                return;
-            }
+                foreach ($gallery_ids as $id) {
+                    $gallery_sv_ids[] = get_field('simpleview_id', $id);
+                }
 
-            $gallery = get_post_meta($pid, 'media');
-            $gallery_ids = $gallery[0] ?? [];
-            $gallery_sv_ids = array();
+                $ids_to_apply = array();
 
-            foreach ($gallery_ids as $id) {
-                $gallery_sv_ids[] = get_field('simpleview_id', $id);
-            }
+                $hero_image = false;
+                $backup_hero_image = false;
 
-            $ids_to_apply = array();
-
-            $hero_image = false;
-            $backup_hero_image = false;
-
-            // HANDLE IMAGES
-            if ($images) {
-                foreach ($images as $sv_id => $image) {
-                    $id_index = array_search($sv_id, $gallery_sv_ids);
-                    if (in_array($sv_id, $gallery_sv_ids)) {
-                        $id = $gallery_ids[$id_index];
-                    } else { // this is a new image
-                        $id = saveImageToWP($image['URL'], $pid, $image['TITLE']);
-                        update_field('simpleview_id', $sv_id, $id);
-                    }
-                    $ids_to_apply[] = $id;
-                    if ($backup_hero_image === false) {
-                        $backup_hero_image = $id;
+                // HANDLE IMAGES
+                if ($images) {
+                    foreach ($images as $sv_id => $image) {
+                        $id_index = array_search($sv_id, $gallery_sv_ids);
+                        if (in_array($sv_id, $gallery_sv_ids)) {
+                            $id = $gallery_ids[$id_index];
+                        } else { // this is a new image
+                            $id = saveImageToWP($image['URL'], $pid, $image['TITLE']);
+                            update_field('simpleview_id', $sv_id, $id);
+                        }
+                        $ids_to_apply[] = $id;
+                        if ($backup_hero_image === false) {
+                            $backup_hero_image = $id;
+                        }
                     }
                 }
-            }
 
-            // HANDLE PREMIUM IMAGES
-            if ($premium_images) {
-                foreach ($premium_images as $sv_id => $image) {
-                    $id_index = array_search($sv_id, $gallery_sv_ids);
-                    if (in_array($sv_id, $gallery_sv_ids)) {
-                        $id = $gallery_ids[$id_index];
-                    } else { // this is a new image
-                        $id = saveImageToWP($image['URL'], $pid, $image['TITLE']);
-                        update_field('simpleview_id', $sv_id, $id);
-                        update_post_meta($id, '_wp_attachment_image_alt', $image['DESC']);
+                // HANDLE PREMIUM IMAGES
+                if ($premium_images) {
+                    foreach ($premium_images as $sv_id => $image) {
+                        $id_index = array_search($sv_id, $gallery_sv_ids);
+                        if (in_array($sv_id, $gallery_sv_ids)) {
+                            $id = $gallery_ids[$id_index];
+                        } else { // this is a new image
+                            $id = saveImageToWP($image['URL'], $pid, $image['TITLE']);
+                            update_field('simpleview_id', $sv_id, $id);
+                            update_post_meta($id, '_wp_attachment_image_alt', $image['DESC']);
+                        }
+                        $ids_to_apply[] = $id;
+                        if ($hero_image === false) {
+                            $hero_image = $id;
+                        }
                     }
-                    $ids_to_apply[] = $id;
-                    if ($hero_image === false) {
-                        $hero_image = $id;
-                    }
+                }
+
+                update_post_meta($pid, 'media', $ids_to_apply);    // add to gallery
+
+                // Handle post thumbnail
+                $thumbnail_image = null;
+                if ($hero_image) {
+                    $thumbnail_image = $hero_image;
+                } elseif ($backup_hero_image) {
+                    $thumbnail_image = $backup_hero_image;
+                } elseif (isset($gallery[0][0])) {
+                    $thumbnail_image = $gallery[0][0];
+                }
+
+                if ($thumbnail_image) {
+                    set_post_thumbnail($pid, $thumbnail_image);
+                } else {
+                    delete_post_thumbnail($pid);
                 }
             }
 
-            update_post_meta($pid, 'media', $ids_to_apply);    // add to gallery
+            function saveImageToWP($image_url = null, $pid = null, $desc = 'null', $append = '')
+            {
+                // Get image from external url and save to Media Library
+                if ($image_url && $pid) {
+                    $tmp = download_url($image_url);
 
-            // Handle post thumbnail
-            $thumbnail_image = null;
-            if ($hero_image) {
-                $thumbnail_image = $hero_image;
-            } elseif ($backup_hero_image) {
-                $thumbnail_image = $backup_hero_image;
-            } elseif (isset($gallery[0][0])) {
-                $thumbnail_image = $gallery[0][0];
-            }
+                    if (is_wp_error($tmp)) {
+                        return false;
+                    }
 
-            if ($thumbnail_image) {
-                set_post_thumbnail($pid, $thumbnail_image);
-            } else {
-                delete_post_thumbnail($pid);
-            }
-        }
+                    // $desc = get_the_title($pid);
+                    $file_array = array();
 
-        function saveImageToWP($image_url = null, $pid = null, $desc = 'null', $append = '')
-        {
-            // Get image from external url and save to Media Library
-            if ($image_url && $pid) {
-                $tmp = download_url($image_url);
+                    // Set variables for storage
+                    // fix file filename for query strings
+                    preg_match('/[^?]+.(jpg|jpe|jpeg|gif|png)/i', $image_url, $matches);
+                    $str_to_splice = isset($matches[0]) ? basename($matches[0]) : '';
 
-                if (is_wp_error($tmp)) {
-                    return false;
+                    $str_pos = strpos($str_to_splice, ".");
+
+                    $str1 = substr($str_to_splice, 0, $str_pos);
+                    $str2 = substr($str_to_splice, $str_pos);
+
+                    $file_array['name'] = $str1 . $append . $str2;
+                    $file_array['tmp_name'] = $tmp;
+
+                    // do the validation and storage stuff
+                    $mid = media_handle_sideload($file_array, $pid, $desc);
+
+                    if (is_wp_error($mid)) {
+                        return false;
+                    }
+                    return $mid;
                 }
-
-                // $desc = get_the_title($pid);
-                $file_array = array();
-
-                // Set variables for storage
-                // fix file filename for query strings
-                preg_match('/[^?]+.(jpg|jpe|jpeg|gif|png)/i', $image_url, $matches);
-                $str_to_splice = isset($matches[0]) ? basename($matches[0]) : '';
-
-                $str_pos = strpos($str_to_splice, ".");
-
-                $str1 = substr($str_to_splice, 0, $str_pos);
-                $str2 = substr($str_to_splice, $str_pos);
-
-                $file_array['name'] = $str1 . $append . $str2;
-                $file_array['tmp_name'] = $tmp;
-
-                // do the validation and storage stuff
-                $mid = media_handle_sideload($file_array, $pid, $desc);
-
-                if (is_wp_error($mid)) {
-                    return false;
-                }
-                return $mid;
-            }
-        } // saveImageToWP
+            } // saveImageToWP
 
 
-        /**
-         * Convert XML to an Array
-         *
-         * @param string $XML
-         * @return array
-         */
-        function XMLtoArray($XML)
-        {
-            $xml_parser = xml_parser_create();
-            xml_parse_into_struct($xml_parser, $XML, $vals);
-            xml_parser_free($xml_parser);
+            /**
+             * Convert XML to an Array
+             *
+             * @param string $XML
+             * @return array
+             */
+            function XMLtoArray($XML)
+            {
+                $xml_parser = xml_parser_create();
+                xml_parse_into_struct($xml_parser, $XML, $vals);
+                xml_parser_free($xml_parser);
 
-            $_tmp = '';
-            foreach ($vals as $xml_elem) {
-                $x_tag = $xml_elem['tag'];
-                $x_level = $xml_elem['level'];
-                $x_type = $xml_elem['type'];
-                if ($x_level != 1 && $x_type == 'close') {
-                    if (isset($multi_key[$x_tag][$x_level])) {
-                        $multi_key[$x_tag][$x_level] = 1;
-                    } else {
-                        $multi_key[$x_tag][$x_level] = 0;
+                $_tmp = '';
+                foreach ($vals as $xml_elem) {
+                    $x_tag = $xml_elem['tag'];
+                    $x_level = $xml_elem['level'];
+                    $x_type = $xml_elem['type'];
+                    if ($x_level != 1 && $x_type == 'close') {
+                        if (isset($multi_key[$x_tag][$x_level])) {
+                            $multi_key[$x_tag][$x_level] = 1;
+                        } else {
+                            $multi_key[$x_tag][$x_level] = 0;
+                        }
+                    }
+                    if ($x_level != 1 && $x_type == 'complete') {
+                        if ($_tmp == $x_tag) {
+                            $multi_key[$x_tag][$x_level] = 1;
+                        }
+                        $_tmp = $x_tag;
                     }
                 }
-                if ($x_level != 1 && $x_type == 'complete') {
-                    if ($_tmp == $x_tag) {
-                        $multi_key[$x_tag][$x_level] = 1;
+                // jedziemy po tablicy
+                foreach ($vals as $xml_elem) {
+                    $x_tag = $xml_elem['tag'];
+                    $x_level = $xml_elem['level'];
+                    $x_type = $xml_elem['type'];
+                    if ($x_type == 'open') {
+                        $level[$x_level] = $x_tag;
                     }
-                    $_tmp = $x_tag;
-                }
-            }
-            // jedziemy po tablicy
-            foreach ($vals as $xml_elem) {
-                $x_tag = $xml_elem['tag'];
-                $x_level = $xml_elem['level'];
-                $x_type = $xml_elem['type'];
-                if ($x_type == 'open') {
-                    $level[$x_level] = $x_tag;
-                }
-                $start_level = 1;
-                $php_stmt = '$xml_array';
-                if ($x_type == 'close' && $x_level != 1) {
-                    $multi_key[$x_tag][$x_level]++;
-                }
-                while ($start_level < $x_level) {
-                    $php_stmt .= '[$level[' . $start_level . ']]';
-                    if (isset($multi_key[$level[$start_level]][$start_level]) && $multi_key[$level[$start_level]][$start_level]) {
-                        $php_stmt .= '[' . ($multi_key[$level[$start_level]][$start_level] - 1) . ']';
+                    $start_level = 1;
+                    $php_stmt = '$xml_array';
+                    if ($x_type == 'close' && $x_level != 1) {
+                        $multi_key[$x_tag][$x_level]++;
                     }
-                    $start_level++;
-                }
-                $add = '';
-                if (isset($multi_key[$x_tag][$x_level]) && $multi_key[$x_tag][$x_level] && ($x_type == 'open' || $x_type == 'complete')) {
-                    if (! isset($multi_key2[$x_tag][$x_level])) {
-                        $multi_key2[$x_tag][$x_level] = 0;
-                    } else {
-                        $multi_key2[$x_tag][$x_level]++;
+                    while ($start_level < $x_level) {
+                        $php_stmt .= '[$level[' . $start_level . ']]';
+                        if (isset($multi_key[$level[$start_level]][$start_level]) && $multi_key[$level[$start_level]][$start_level]) {
+                            $php_stmt .= '[' . ($multi_key[$level[$start_level]][$start_level] - 1) . ']';
+                        }
+                        $start_level++;
                     }
-                    $add = '[' . $multi_key2[$x_tag][$x_level] . ']';
-                }
-                if (isset($xml_elem['value']) && trim($xml_elem['value']) != '' && ! array_key_exists(
+                    $add = '';
+                    if (isset($multi_key[$x_tag][$x_level]) && $multi_key[$x_tag][$x_level] && ($x_type == 'open' || $x_type == 'complete')) {
+                        if (! isset($multi_key2[$x_tag][$x_level])) {
+                            $multi_key2[$x_tag][$x_level] = 0;
+                        } else {
+                            $multi_key2[$x_tag][$x_level]++;
+                        }
+                        $add = '[' . $multi_key2[$x_tag][$x_level] . ']';
+                    }
+                    if (isset($xml_elem['value']) && trim($xml_elem['value']) != '' && ! array_key_exists(
                         'attributes',
                         $xml_elem
                     )) {
-                    if ($x_type == 'open') {
-                        $php_stmt_main = $php_stmt . '[$x_type]' . $add . '[\'content\'] = $xml_elem[\'value\'];';
-                    } else {
-                        $php_stmt_main = $php_stmt . '[$x_tag]' . $add . ' = $xml_elem[\'value\'];';
-                    }
-                    eval($php_stmt_main);
-                }
-                if (array_key_exists('attributes', $xml_elem)) {
-                    if (isset($xml_elem['value'])) {
-                        $php_stmt_main = $php_stmt . '[$x_tag]' . $add . '[\'content\'] = $xml_elem[\'value\'];';
+                        if ($x_type == 'open') {
+                            $php_stmt_main = $php_stmt . '[$x_type]' . $add . '[\'content\'] = $xml_elem[\'value\'];';
+                        } else {
+                            $php_stmt_main = $php_stmt . '[$x_tag]' . $add . ' = $xml_elem[\'value\'];';
+                        }
                         eval($php_stmt_main);
                     }
-                    foreach ($xml_elem['attributes'] as $key => $value) {
-                        $php_stmt_att = $php_stmt . '[$x_tag]' . $add . '[$key] = $value;';
-                        eval($php_stmt_att);
+                    if (array_key_exists('attributes', $xml_elem)) {
+                        if (isset($xml_elem['value'])) {
+                            $php_stmt_main = $php_stmt . '[$x_tag]' . $add . '[\'content\'] = $xml_elem[\'value\'];';
+                            eval($php_stmt_main);
+                        }
+                        foreach ($xml_elem['attributes'] as $key => $value) {
+                            $php_stmt_att = $php_stmt . '[$x_tag]' . $add . '[$key] = $value;';
+                            eval($php_stmt_att);
+                        }
                     }
                 }
-            }
-            return $xml_array;
-        } // XMLtoArray
-
+                return $xml_array;
+            } // XMLtoArray
+        }
     }
 }
+
+/* vim: set ts=4 sw=4 sts=4 et : */

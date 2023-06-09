@@ -288,244 +288,244 @@ function update_standard_fields($pid, $standard_fields) {
 }
 
 function reset_listing_type($pid, $listing_type_id) {
-  wp_set_object_terms( $pid, intval( $listing_type_id ), 'listing_type' );
+    wp_set_object_terms( $pid, intval( $listing_type_id ), 'listing_type' );
 }
 
 function process_api_images($response, $hr_response) {
-  $response = handle_array_anomalies($response);
-  $images = array();
+    $response = handle_array_anomalies($response);
+    $images = array();
 
-  $hr_response = handle_array_anomalies($hr_response);
-  $hr_images = array();
+    $hr_response = handle_array_anomalies($hr_response);
+    $hr_images = array();
 
-  if ($response !== false) {
-    foreach ($response as $image) {
-      if (isset( $image['TYPEID'] )) {
-        if ($image['TYPEID'] == 2 || $image['TYPEID'] == 1) { //TYPEID for standard img
-          $image_id                   = $image['MEDIAID'];
-          $images[$image_id]          = array();
-          $images[$image_id]['URL']   = $image['IMGPATH'].$image['MEDIAFILE'];
-          $images[$image_id]['TITLE'] = $image['MEDIANAME'];
+    if ($response !== false) {
+        foreach ($response as $image) {
+            if (isset( $image['TYPEID'] )) {
+                if ($image['TYPEID'] == 2 || $image['TYPEID'] == 1) { //TYPEID for standard img
+                    $image_id                   = $image['MEDIAID'];
+                    $images[$image_id]          = array();
+                    $images[$image_id]['URL']   = $image['IMGPATH'].$image['MEDIAFILE'];
+                    $images[$image_id]['TITLE'] = $image['MEDIANAME'];
 
-          if (!is_array($image['MEDIADESC'])) { //rimages do not have desc often
-            $images[$image_id]['DESC']  = $image['MEDIADESC'];
-          }
-          else {
-            $images[$image_id]['DESC']  = "";
-          }
-        }
-        elseif ($image['TYPEID'] == 4) { //TYPEID for high-res img
-          $hr_id = $image['MEDIAID'];
-          $hr_images[$hr_id] = array();
-          $hr_images[$hr_id]['TITLE'] = $image['MEDIANAME'];
-          $hr_images[$hr_id]['DESC']  = $image['MEDIADESC'];
-          $hr_images[$hr_id]['URL']   = "";
-        }
-      }
-    }
-  }
-  else {
-    $images = false;
-  }
-
-  if ($hr_response !== false) {
-    if ( isset($hr_response[0]) ) {
-      foreach ($hr_response as $hr_image) {
-        if (isset( $hr_image['MEDIAID'] )) {
-          $hr_id = $hr_image['MEDIAID'];
-          if ( isset($hr_images[$hr_id]) ) {
-            if (!(is_array($hr_image['PATH'])) && !(is_array($hr_image['HIGHRESIMAGE'])) ) {
-              $hr_images[$hr_id]['URL']   = $hr_image['PATH'].$hr_image['HIGHRESIMAGE'];
+                    if (!is_array($image['MEDIADESC'])) { //rimages do not have desc often
+                        $images[$image_id]['DESC']  = $image['MEDIADESC'];
+                    }
+                    else {
+                        $images[$image_id]['DESC']  = "";
+                    }
+                }
+                elseif ($image['TYPEID'] == 4) { //TYPEID for high-res img
+                    $hr_id = $image['MEDIAID'];
+                    $hr_images[$hr_id] = array();
+                    $hr_images[$hr_id]['TITLE'] = $image['MEDIANAME'];
+                    $hr_images[$hr_id]['DESC']  = $image['MEDIADESC'];
+                    $hr_images[$hr_id]['URL']   = "";
+                }
             }
-            else {
-              $hr_images[$hr_id]['URL'] = "";
+        }
+    }
+    else {
+        $images = false;
+    }
+
+    if ($hr_response !== false) {
+        if ( isset($hr_response[0]) ) {
+            foreach ($hr_response as $hr_image) {
+                if (isset( $hr_image['MEDIAID'] )) {
+                    $hr_id = $hr_image['MEDIAID'];
+                    if ( isset($hr_images[$hr_id]) ) {
+                        if (!(is_array($hr_image['PATH'])) && !(is_array($hr_image['HIGHRESIMAGE'])) ) {
+                            $hr_images[$hr_id]['URL']   = $hr_image['PATH'].$hr_image['HIGHRESIMAGE'];
+                        }
+                        else {
+                            $hr_images[$hr_id]['URL'] = "";
+                        }
+                    }
+                    else { //FALLBACK
+                        $hr_id = $hr_image['MEDIAID'];
+                        $hr_images[$hr_id]          = array();
+                        $hr_images[$hr_id]['TITLE'] = "";
+                        $hr_images[$hr_id]['DESC']  = "No Descipton";
+                        $hr_images[$hr_id]['URL']   = $hr_image['PATH'].$hr_image['HIGHRESIMAGE'];
+                    }
+                }
             }
-          }
-          else { //FALLBACK
-            $hr_id = $hr_image['MEDIAID'];
-            $hr_images[$hr_id]          = array();
-            $hr_images[$hr_id]['TITLE'] = "";
-            $hr_images[$hr_id]['DESC']  = "No Descipton";
-            $hr_images[$hr_id]['URL']   = $hr_image['PATH'].$hr_image['HIGHRESIMAGE'];
-          }
         }
-      }
-    }
-    else { // The array is not nested
+        else { // The array is not nested
 
-      if (isset( $hr_images_response['MEDIAID'] )) {
-        $hr_id = $hr_images_response['MEDIAID'];
-        if ( isset($hr_images[$hr_id]) ) {
-          if (!(is_array($hr_images_response['PATH'])) && !(is_array($hr_images_response['HIGHRESIMAGE'])) ) {
-            $hr_images[$hr_id]['URL']   = $hr_images_response['PATH'].$hr_images_response['HIGHRESIMAGE'];
-          }
-          else {
-            $hr_images[$hr_id]['URL'] = "";
-          }
+            if (isset( $hr_images_response['MEDIAID'] )) {
+                $hr_id = $hr_images_response['MEDIAID'];
+                if ( isset($hr_images[$hr_id]) ) {
+                    if (!(is_array($hr_images_response['PATH'])) && !(is_array($hr_images_response['HIGHRESIMAGE'])) ) {
+                        $hr_images[$hr_id]['URL']   = $hr_images_response['PATH'].$hr_images_response['HIGHRESIMAGE'];
+                    }
+                    else {
+                        $hr_images[$hr_id]['URL'] = "";
+                    }
+                }
+                else { //FALLBACK
+                    $hr_id = $hr_images_response['MEDIAID'];
+                    $hr_images[$hr_id]          = array();
+                    $hr_images[$hr_id]['TITLE'] = "";
+                    $hr_images[$hr_id]['DESC']  = "No Descipton";
+                    $hr_images[$hr_id]['URL']   = $hr_images_response['PATH'].$hr_images_response['HIGHRESIMAGE'];
+                }
+            }
         }
-        else { //FALLBACK
-          $hr_id = $hr_images_response['MEDIAID'];
-          $hr_images[$hr_id]          = array();
-          $hr_images[$hr_id]['TITLE'] = "";
-          $hr_images[$hr_id]['DESC']  = "No Descipton";
-          $hr_images[$hr_id]['URL']   = $hr_images_response['PATH'].$hr_images_response['HIGHRESIMAGE'];
-        }
-      }
     }
-  }
-  else {
-    $hr_images = false;
-  }
+    else {
+        $hr_images = false;
+    }
 
-  return [$images, $hr_images];
+    return [$images, $hr_images];
 }
 
 function process_membership_info($type) {
 
-  if ($type == "Members") {
-    $listing_type_id_arr = term_exists( 'members', 'listing_type' );
-    $listing_type_id = $listing_type_id_arr['term_id'];
-  }
-  elseif ($type == "Non-Members") {
-    $listing_type_id_arr = term_exists( 'non-members', 'listing_type' );
-    $listing_type_id = $listing_type_id_arr['term_id'];
-  }
-  elseif ($type == "Premium Members") {
-    $listing_type_id_arr = term_exists( 'premium', 'listing_type' );
-    $listing_type_id = $listing_type_id_arr['term_id'];
-  }
-  else {
-    $listing_type_id = false;
-  }
+    if ($type == "Members") {
+        $listing_type_id_arr = term_exists( 'members', 'listing_type' );
+        $listing_type_id = $listing_type_id_arr['term_id'];
+    }
+    elseif ($type == "Non-Members") {
+        $listing_type_id_arr = term_exists( 'non-members', 'listing_type' );
+        $listing_type_id = $listing_type_id_arr['term_id'];
+    }
+    elseif ($type == "Premium Members") {
+        $listing_type_id_arr = term_exists( 'premium', 'listing_type' );
+        $listing_type_id = $listing_type_id_arr['term_id'];
+    }
+    else {
+        $listing_type_id = false;
+    }
 
-  return $listing_type_id;
+    return $listing_type_id;
 }
 
 function get_amenities_info() {
 
-  $tag_to_tab = array();
+    $tag_to_tab = array();
 
-  $amenities_info_response = sv_api_connection('getListingAmenities', 1);
-  if ($amenities_info_response !== 'error') {
-    $amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
-    foreach ($amenities_info as $info) {
+    $amenities_info_response = sv_api_connection('getListingAmenities', 1);
+    if ($amenities_info_response !== 'error') {
+        $amenities_info = $amenities_info_response['AMENITIES']['AMENITY'];
+        foreach ($amenities_info as $info) {
 
-      $tab_id 		= $info["AMENITYTABID"];
-      $tab_name 		= $info["AMENITYTABNAME"];
-      $tab_slug  		= reformCategorySlug($tab_name);
-      
-      $tab_cat_id  	= addCategory($tab_name, $tab_slug, '', 'amenities');
+            $tab_id 		= $info["AMENITYTABID"];
+            $tab_name 		= $info["AMENITYTABNAME"];
+            $tab_slug  		= reformCategorySlug($tab_name);
 
-      if ( !(isset($tag_to_tab[$tab_id])) ) {
-        $tag_to_tab[$tab_id] = array($tab_name , array(), $tab_cat_id);
-      }
+            $tab_cat_id  	= addCategory($tab_name, $tab_slug, '', 'amenities');
+
+            if ( !(isset($tag_to_tab[$tab_id])) ) {
+                $tag_to_tab[$tab_id] = array($tab_name , array(), $tab_cat_id);
+            }
+        }
     }
-  }
 
-  return $tag_to_tab;
+    return $tag_to_tab;
 }
 
 function process_amenities($amenities_response, $tag_to_tab) {
 
-  $amenities = array();
+    $amenities = array();
 
-  foreach ($amenities_response as $amenity) {
-    if ( isset($amenity['AMENITYTABID']) ) {
-      $amenityIndex = $amenity['AMENITYTABID'];
-      if ( !is_array($amenity['VALUE']) && ($amenity['VALUE']!='0') && ($amenity['VALUE']!=0) ) {
-        $tag_to_tab[$amenityIndex][1][$amenity['NAME']] = $amenity['VALUE'];
-      }
-    }
-  }
-
-  $amenities_string = "";
-  foreach($tag_to_tab as $tab) {
-
-    $tab_name = $tab[0];
-    $tab_amenities = $tab[1];
-    $amenities_pre_string = "";
-    $amenities_list_string = "";
-    $amenities_post_string = "";
-
-    if ( count($tab_amenities) > 0 ) {
-      foreach($tab_amenities as $name => $value){
-        if ($value === false){
-          $amenities_list_string .= "<li>".$name."</li>";
+    foreach ($amenities_response as $amenity) {
+        if ( isset($amenity['AMENITYTABID']) ) {
+            $amenityIndex = $amenity['AMENITYTABID'];
+            if ( !is_array($amenity['VALUE']) && ($amenity['VALUE']!='0') && ($amenity['VALUE']!=0) ) {
+                $tag_to_tab[$amenityIndex][1][$amenity['NAME']] = $amenity['VALUE'];
+            }
         }
-        else {
-          $amenities_list_string .= "<li>".$name.": ".$value."</li>";
+    }
+
+    $amenities_string = "";
+    foreach($tag_to_tab as $tab) {
+
+        $tab_name = $tab[0];
+        $tab_amenities = $tab[1];
+        $amenities_pre_string = "";
+        $amenities_list_string = "";
+        $amenities_post_string = "";
+
+        if ( count($tab_amenities) > 0 ) {
+            foreach($tab_amenities as $name => $value){
+                if ($value === false){
+                    $amenities_list_string .= "<li>".$name."</li>";
+                }
+                else {
+                    $amenities_list_string .= "<li>".$name.": ".$value."</li>";
+                }
+            }
         }
-      }
+        if ( strlen($amenities_list_string) > 0 ) {
+            $amenities_pre_string = "<h2><strong>".$tab_name."</strong></h2>";
+            $amenities_pre_string .= "<ul>";
+            $amenities_post_string = "</ul>";
+            $amenities_string .= $amenities_pre_string.$amenities_list_string.$amenities_post_string;
+        }
     }
-    if ( strlen($amenities_list_string) > 0 ) {
-      $amenities_pre_string = "<h2><strong>".$tab_name."</strong></h2>";
-      $amenities_pre_string .= "<ul>";
-      $amenities_post_string = "</ul>";
-      $amenities_string .= $amenities_pre_string.$amenities_list_string.$amenities_post_string;
+
+    $amenities_taxonomies = array();
+    foreach($tag_to_tab as $tab) {
+
+        $tab_name = $tab[0];
+        $tab_amenities = $tab[1];
+
+        $parent_slug  = reformCategorySlug($tab_name);
+        $parent_tax = get_term_by('slug', $parent_slug, 'amenities');
+        $parent_id = $parent_tax->term_id;
+
+        if ( count($tab_amenities) > 0 ) {
+            foreach($tab_amenities as $cat_name => $value){
+                $cat_slug  = reformCategorySlug($cat_name);
+
+                $category  = addCategory($cat_name, $cat_slug, $parent_id, 'amenities');
+                $amenities_taxonomies[] = intval($category);
+            }
+        }
     }
-  }
 
-  $amenities_taxonomies = array();
-  foreach($tag_to_tab as $tab) {
-
-    $tab_name = $tab[0];
-    $tab_amenities = $tab[1];
-
-    $parent_slug  = reformCategorySlug($tab_name);
-    $parent_tax = get_term_by('slug', $parent_slug, 'amenities');
-    $parent_id = $parent_tax->term_id;
-
-    if ( count($tab_amenities) > 0 ) {
-      foreach($tab_amenities as $cat_name => $value){
-        $cat_slug  = reformCategorySlug($cat_name);
-        
-        $category  = addCategory($cat_name, $cat_slug, $parent_id, 'amenities');
-        $amenities_taxonomies[] = intval($category);
-      }
+    // Clear The Array
+    foreach ($amenities_response as $amenity) {
+        if ( isset($amenity['AMENITYTABID']) ) {
+            $amenityIndex = $amenity['AMENITYTABID'];
+            unset( $tag_to_tab[$amenityIndex][1] );
+            $tag_to_tab[$amenityIndex][1] = array();
+        }
     }
-  }
 
-  // Clear The Array
-  foreach ($amenities_response as $amenity) {
-    if ( isset($amenity['AMENITYTABID']) ) {
-      $amenityIndex = $amenity['AMENITYTABID'];
-      unset( $tag_to_tab[$amenityIndex][1] );
-      $tag_to_tab[$amenityIndex][1] = array();
-    }
-  }
-
-  return [
-      $amenities_string, 
-      $amenities_taxonomies
-  ];
+    return [
+        $amenities_string, 
+        $amenities_taxonomies
+    ];
 }
 
 function process_region($region_name) {
-  $region_slug    = reformCategorySlug($region_name);      
-  $region_cat_id  = addCategory($region_name, $region_slug, '', 'regions');
-  return [$region_cat_id];
+    $region_slug    = reformCategorySlug($region_name);      
+    $region_cat_id  = addCategory($region_name, $region_slug, '', 'regions');
+    return [$region_cat_id];
 }
 
 function grab_fields($listing) {
     // Address
     $address  = '';
-    $address .= ! empty($listing['ADDR1']) ? $listing['ADDR1'] : '';
-    $address .= ! empty($listing['ADDR2']) ? "\n" . $listing['ADDR2'] : '';
-    $address .= ! empty($listing['ADDR3']) ? "\n" . $listing['ADDR3'] : '';
-    $city     = ! empty($listing['CITY']) ? $listing['CITY'] : '';
-    $state    = ! empty($listing['STATE']) ? $listing['STATE'] : '';
-    $zip      = ! empty($listing['ZIP']) ? ' ' . $listing['ZIP'] : '';
-    if ($city != '' && $state != ''):
+    $address .= !empty($listing['ADDR1']) ? $listing['ADDR1'] : '';
+    $address .= !empty($listing['ADDR2']) ? ("\n" . $listing['ADDR2']) : '';
+    $address .= !empty($listing['ADDR3']) ? ("\n" . $listing['ADDR3']) : '';
+    $city     = !empty($listing['CITY']) ? $listing['CITY'] : '';
+    $state    = !empty($listing['STATE']) ? $listing['STATE'] : '';
+    $zip      = !empty($listing['ZIP']) ? (' ' . $listing['ZIP']) : '';
+    if ($city != '' && $state != '') {
         $city_state = $city . ', ' . $state;
-    else:
+    } else {
         $city_state = $city . $state;
-    endif;
+    }
     $address .= "\n" . $city_state . $zip;
 
     $map_coordinates = '';
-    if (! empty($listing['LATITUDE']) && ! empty($listing['LONGITUDE'])):
+    if (! empty($listing['LATITUDE']) && ! empty($listing['LONGITUDE'])) {
         $map_coordinates = $listing['LATITUDE'] . ',' . $listing['LONGITUDE'];
-    endif;
+    }
 
     // General //
 
@@ -568,18 +568,18 @@ function grab_fields($listing) {
     $social_media = ! empty($listing['SOCIALMEDIA']['ITEM']) ? $listing['SOCIALMEDIA']['ITEM'] : '';
     // Handle social media URLS.
     // SV API Arrays differ if there is only 1 SOCIALMEDIA ITEM
-    if (isset($social_media[0])):
-        if (is_array($social_media[0])):
-            foreach ($social_media as $network):
+    if (isset($social_media[0])) {
+        if (is_array($social_media[0])) {
+            foreach ($social_media as $network) {
                 $network_service = strtolower($network['SERVICE']);
                 $$network_service = ! empty($network['VALUE']) ? $network['VALUE'] : '';
-            endforeach;
-        // Only 1 item
-        else:
+            }
+            // Only 1 item
+        } else {
             $network_service = strtolower($social_media['SERVICE']);
             $$network_service = ! empty($social_media['VALUE']) ? $social_media['VALUE'] : '';
-        endif;
-    endif;
+        }
+    }
 
     // Categories TODO: Maybe Handle Seperately
     $post_cats = array();
@@ -755,115 +755,108 @@ function create_new_event($event, $log_file)
 
 function update_event_imgaes($pid, $event, $title, $log_file) {
 
-  $image_list =  array();
+    $image_list =  array();
 
-  if ( isset($event->IMAGES) ) {
-    foreach ($event->IMAGES as $wrapper) {
-      foreach($wrapper['IMAGE'] as $image):
-        $image_list[] = $image['MEDIAFILE'];
-      endforeach;
-    }
-  }
-
-  $thumbnail_id = get_post_thumbnail_id($pid);
-  $gallery = get_field('media', $pid);
-  
-  $added_featured = false;
-  $mid = array();
-
-  $fill_gallery = false;
-  
-  if ( !$gallery ) {
-    $gallery = [];
-    update_field('media', $gallery, $pid);
-  }
-
-
-  if ( count($gallery) < 1 ) {
-
-    foreach ($image_list as $image_url) {
-
-      $id = saveImageToWP($image_url, $pid, $title, "_events");
-
-      if ($id) {
-        
-        if (!$thumbnail_id && !$added_featured ) { // set first image to be thumbnail
-          if ( wp_get_attachment_image_src($id) ) {
-            set_post_thumbnail($pid, $id);
-            $added_featured = true;
-          }
-        }
-        
-        array_push($mid, $id);
-      
-      }
-      else {
-        file_put_contents( $log_file, "Image Upload Error: ".$image_url.PHP_EOL, FILE_APPEND );
-      }
-    }
-    update_post_meta($pid, 'media', $mid);
-  }
-  // TODo: why is this a problem
-  elseif (!$thumbnail_id) { // we have to replace the thumbnail from the gallery
-    if ( isset($gallery) ) {
-      if ( isset($gallery[0]) ) {
-        if (!is_wp_error($gallery[0])) {
-          if ( isset($gallery[0]['ID']) ) {
-            if ( wp_get_attachment_image_src($gallery[0]['ID']) ) {
-              set_post_thumbnail($pid, $gallery[0]['ID']);
+    if ( isset($event->IMAGES) ) {
+        foreach ($event->IMAGES as $wrapper) {
+            foreach($wrapper['IMAGE'] as $image) {
+                $image_list[] = $image['MEDIAFILE'];
             }
-          }
-          else {
-            if ( wp_get_attachment_image_src($gallery[0]) ) {
-              set_post_thumbnail($pid, $gallery[0]);
-            }
-          }
         }
-      }
     }
-  }
+
+    $thumbnail_id = get_post_thumbnail_id($pid);
+    $gallery = get_field('media', $pid);
+
+    $added_featured = false;
+    $mid = array();
+
+    $fill_gallery = false;
+
+    if ( !$gallery ) {
+        $gallery = [];
+        update_field('media', $gallery, $pid);
+    }
+
+
+    if ( count($gallery) < 1 ) {
+
+        foreach ($image_list as $image_url) {
+
+            $id = saveImageToWP($image_url, $pid, $title, "_events");
+
+            if ($id) {
+
+                if (!$thumbnail_id && !$added_featured ) { // set first image to be thumbnail
+                    if ( wp_get_attachment_image_src($id) ) {
+                        set_post_thumbnail($pid, $id);
+                        $added_featured = true;
+                    }
+                }
+
+                array_push($mid, $id);
+
+            }
+            else {
+                file_put_contents( $log_file, "Image Upload Error: ".$image_url.PHP_EOL, FILE_APPEND );
+            }
+        }
+        update_post_meta($pid, 'media', $mid);
+    }
+    // TODo: why is this a problem
+    elseif (!$thumbnail_id) { // we have to replace the thumbnail from the gallery
+        if ( isset($gallery) ) {
+            if ( isset($gallery[0]) ) {
+                if (!is_wp_error($gallery[0])) {
+                    if ( isset($gallery[0]['ID']) ) {
+                        if ( wp_get_attachment_image_src($gallery[0]['ID']) ) {
+                            set_post_thumbnail($pid, $gallery[0]['ID']);
+                        }
+                    }
+                    else {
+                        if ( wp_get_attachment_image_src($gallery[0]) ) {
+                            set_post_thumbnail($pid, $gallery[0]);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 function process_event_images($pid, $event, $title, $log_file) {
 
-  $image_list 						=  array();
+    $image_list 						=  array();
 
-  if ( isset($event->IMAGES) ) {
-    foreach ($event->IMAGES as $wrapper) {
-      foreach($wrapper['IMAGE'] as $image):
-        $image_list[] = $image['MEDIAFILE'];
-      endforeach;
-    }
-  }
-
-  $added_featured = false;
-  $mid = array();
-  foreach ($image_list as $image_url) {
-
-    file_put_contents( $log_file, "Image URL: ".$image_url.PHP_EOL, FILE_APPEND );
-  
-    $id = saveImageToWP($image_url, $pid, $title, "_events");
-
-    file_put_contents( $log_file, "After Upload ID: ".$id.PHP_EOL, FILE_APPEND );
-  
-
-    if ($id) {
-
-      if (!$added_featured && !is_wp_error($id) ) { // set first image to be thumbnail
-
-        if ( wp_get_attachment_image_src($id) ) {
-          set_post_thumbnail($pid, $id);
-          $added_featured = true;
+    if ( isset($event->IMAGES) ) {
+        foreach ($event->IMAGES as $wrapper) {
+            foreach($wrapper['IMAGE'] as $image) {
+                $image_list[] = $image['MEDIAFILE'];
+            }
         }
-      }
-  
-      array_push($mid, $id);
     }
-    else {
-      file_put_contents( $log_file, "Image Upload Error: ".$image_url.PHP_EOL, FILE_APPEND );
+
+    $added_featured = false;
+    $mid = array();
+    foreach ($image_list as $image_url) {
+        file_put_contents( $log_file, "Image URL: " . $image_url . PHP_EOL, FILE_APPEND );
+        $id = saveImageToWP($image_url, $pid, $title, "_events");
+        file_put_contents( $log_file, "After Upload ID: " . $id . PHP_EOL, FILE_APPEND );
+
+        if ($id) {
+            if (!$added_featured && !is_wp_error($id) ) { // set first image to be thumbnail
+                if ( wp_get_attachment_image_src($id) ) {
+                    set_post_thumbnail($pid, $id);
+                    $added_featured = true;
+                }
+            }
+
+            array_push($mid, $id);
+        } else {
+            file_put_contents( $log_file, "Image Upload Error: " . $image_url . PHP_EOL, FILE_APPEND );
+        }
     }
-  }
-  update_post_meta($pid, 'media', $mid);
+    update_post_meta($pid, 'media', $mid);
 }
 
 function grab_event_fields($event) {
@@ -901,9 +894,9 @@ function grab_event_fields($event) {
     $location = isset($event->LOCATION) ? $event->LOCATION : '';
 
     $map_coordinates = '';
-    if (isset($event->LATITUDE) && isset($event->LONGITUDE)):
+    if (isset($event->LATITUDE) && isset($event->LONGITUDE)) {
         $map_coordinates = $event->LATITUDE . ',' . $event->LONGITUDE;
-    endif;
+    }
 
     $mediafile = '';
     $neverexpire = isset($event->NEVEREXPIRE) ? $event->NEVEREXPIRE : '';
@@ -1022,126 +1015,125 @@ function update_event_standard_fields($pid, $standard_fields) {
 
 function clearOldLog($logFolder) {
 
-  $fileDeleted = false;
+    $fileDeleted = false;
 
-  if (is_dir($logFolder)) {
-    $files = array_diff(scandir($logFolder), array('.', '..'));
+    if (is_dir($logFolder)) {
+        $files = array_diff(scandir($logFolder), array('.', '..'));
 
-    if (count($files) < 6) {
-      return "There are less than 5 logs stored. No deletion attempted.";
-    }
-
-    $nowTime = time();
-
-    foreach($files as $fileString) {
-      $date = strtok($fileString, '_');
-      $difference = $nowTime - strtotime($date);
-      $daysSince = round($difference / (60 * 60 * 24));
-
-      if ($daysSince > 5) {
-        $deleteList[] = $fileString;
-      }
-    }
-
-    if ( count($deleteList) > 0) {
-
-      $return_message = 'The following logs have been deleted: '.PHP_EOL;
-
-      foreach ($deleteList as $fileToDelete) {
-        $fullPath = $logFolder.$fileToDelete;
-          if (file_exists($fullPath)) {
-            $fileDeleted = unlink($fullPath);
-            if ($fileDeleted) {
-              $return_message .= $fullPath.", ".PHP_EOL;
-            }
-            else {
-              return "Error: One of the log deletions failed.";
-            }
-          }
+        if (count($files) < 6) {
+            return "There are less than 5 logs stored. No deletion attempted.";
         }
-      }
 
-      return substr($return_message, 0, -2);
+        $nowTime = time();
+
+        foreach($files as $fileString) {
+            $date = strtok($fileString, '_');
+            $difference = $nowTime - strtotime($date);
+            $daysSince = round($difference / (60 * 60 * 24));
+
+            if ($daysSince > 5) {
+                $deleteList[] = $fileString;
+            }
+        }
+
+        if ( count($deleteList) > 0) {
+
+            $return_message = 'The following logs have been deleted: ' . PHP_EOL;
+
+            foreach ($deleteList as $fileToDelete) {
+                $fullPath = $logFolder.$fileToDelete;
+                if (file_exists($fullPath)) {
+                    $fileDeleted = unlink($fullPath);
+                    if ($fileDeleted) {
+                        $return_message .= $fullPath . ", " . PHP_EOL;
+                    }
+                    else {
+                        return "Error: One of the log deletions failed.";
+                    }
+                }
+            }
+        }
+
+        return substr($return_message, 0, -2);
     }
 
-  return "The path stored for the log directory is incorrect";
-  
+    return "The path stored for the log directory is incorrect";
 }
 
 function getLogFile($log_options, $logType) {
-  $log_id = date("Ymd");
-  $log_folder = $log_options[$logType.'_import_folder'];
-	$log_file = $log_folder.$log_id.'_'.$logType.'_cron.log';
+    $log_id = date("Ymd");
+    $log_folder = $log_options[$logType . '_import_folder'];
+    $log_file = $log_folder . $log_id . '_' . $logType . '_cron.log';
 
-  return $log_file;
+    return $log_file;
 }
 
-function createLog($log_options, $logType = 'listings', $cronJob, $api_results_num = false) {
+function createLog($log_options, $logType, $cronJob, $api_results_num = false) {
+    $logType = $logType ?? 'listings';
 
-  $logData = get_option( 'sv_api_logs' );
-  $logData['events_import_folder'] = plugin_dir_path( __FILE__ ) . 'logs/event_logs/';
-  $logData['listings_import_folder'] = plugin_dir_path( __FILE__ ) . 'logs/listing_logs/';
-  update_option( 'sv_api_logs', $logData );
+    $logData = get_option( 'sv_api_logs' );
+    $logData['events_import_folder'] = plugin_dir_path( __FILE__ ) . 'logs/event_logs/';
+    $logData['listings_import_folder'] = plugin_dir_path( __FILE__ ) . 'logs/listing_logs/';
 
-  $log_id = date("Ymd");
-  $log  	= "Start Cron Log -- ".date("F j, Y, g:i a").PHP_EOL.
-            "--------------------------------------------------".PHP_EOL;
-  if ($logType == 'events') {
-    $fail_message = get_option( 'sv_api_'.$logType.'_failure_message' );
-    $fail_message = $fail_message ? $fail_message : "No";
-    $log .= "Did Conection Fail? ".$fail_message.PHP_EOL.
-            "API Return Count: ".$api_results_num.PHP_EOL.
-            "--------------------------------------------------".PHP_EOL;
-  }
-  else {
-    if (is_array($api_results_num)) {
-      $api_results_num = $api_results_num[0];
+    update_option( 'sv_api_logs', $logData );
+
+    $log_id = date("Ymd");
+    $log = 'Start Cron Log -- ' . date('F j, Y, g:i a') . PHP_EOL
+        . '--------------------------------------------------' . PHP_EOL;
+    if ($logType == 'events') {
+        $fail_message = get_option( 'sv_api_'.$logType.'_failure_message' );
+        $fail_message = $fail_message ? $fail_message : 'No';
+        $log .= 'Did Conection Fail? ' . $fail_message . PHP_EOL
+            . 'API Return Count: ' . $api_results_num . PHP_EOL
+            . '--------------------------------------------------' . PHP_EOL;
     }
-    $log .= 'API Connect Function Return: '.$api_results_num.PHP_EOL.
-            "Fail Message: ".get_option( 'sv_api_' ).PHP_EOL.
-            "--------------------------------------------------".PHP_EOL;
-  }
+    else {
+        if (is_array($api_results_num)) {
+            $api_results_num = $api_results_num[0];
+        }
+        $log .= 'API Connect Function Return: ' . $api_results_num . PHP_EOL
+            . 'Fail Message: ' . get_option( 'sv_api_' ) . PHP_EOL
+            . '--------------------------------------------------' . PHP_EOL;
+    }
 
-  $log_folder = $log_options[$logType.'_import_folder'];
-	$log_file = $log_folder.$log_id.'_'.$logType.'_cron.log';
+    $log_folder = $log_options[$logType . '_import_folder'];
+    $log_file = $log_folder . $log_id . '_' . $logType . '_cron.log';
 
+    // Ensure log directory
+    mkdir($log_folder, 0777, true);
+    $log_success = file_put_contents($log_file, $log, FILE_APPEND);
 
-	$log_success = file_put_contents($log_file, $log, FILE_APPEND);
-
-  return [
-    $log_success,
-    $log_folder,
-    $log_file
-  ];
+    return [
+        $log_success,
+        $log_folder,
+        $log_file
+    ];
 }
 
 function addLogData($log_file, $items, $startingIndex = 1) {
+    $log_info = false;
+    $index = $startingIndex;
 
-  $log_info = false;
-  $index    = $startingIndex;
-
-  $log_info = "Adding The log data...".PHP_EOL."Count: ".count($items).PHP_EOL;
-  if ( count($items) ){
-    foreach ($items as $item_status) {
-      $log_info .= $index.'. '.$item_status[0] . ' -- ' . $item_status[1].PHP_EOL;
-      $index++;
+    $log_info = 'Adding The log data...' . PHP_EOL . 'Count: ' . count($items) . PHP_EOL;
+    if ( count($items) ){
+        foreach ($items as $item_status) {
+            $log_info .= $index . '. ' . $item_status[0] . ' -- ' . $item_status[1] . PHP_EOL;
+            $index++;
+        }
     }
-  }
 
-  if ($log_info) {
-    file_put_contents( $log_file, $log_info, FILE_APPEND);
-  }
-
+    if ($log_info) {
+        file_put_contents( $log_file, $log_info, FILE_APPEND);
+    }
 }
 
 function addPagedFailMessageToLog($log_file, $page) {
+    $fail_log = '--------------------------------------------------' . PHP_EOL
+        . 'Fail Log. Page: ' . $page . PHP_EOL
+        . 'Fail Message: ' . get_option( 'sv_api_failure_message' ) . PHP_EOL
+        . '--------------------------------------------------' . PHP_EOL;
 
-  $fail_log  =  "--------------------------------------------------".PHP_EOL.
-								"Fail Log. Page: ".$page.PHP_EOL.
-								"Fail Message: ".get_option( 'sv_api_failure_message' ).PHP_EOL.
-								"--------------------------------------------------".PHP_EOL;
-
-	file_put_contents( $log_file, $fail_log, FILE_APPEND);
+    file_put_contents( $log_file, $fail_log, FILE_APPEND);
 
 }
 
@@ -1149,7 +1141,7 @@ function process_events($page = 0, $type = 'manual') {
     $html = '';
 
     if ( $page == 0 ) {
-        update_option('sv_api_last_run_events', date("F j, Y, g:i a"));
+        update_option('sv_api_last_run_events', date('F j, Y, g:i a'));
         update_option('sv_api_events_failure_message', false);
         update_option('sv_api_event_method', $type);
         update_option('sv_api_events_processed', 0);
@@ -1299,8 +1291,8 @@ function process_events($page = 0, $type = 'manual') {
     $page = $page + 1;
 
     $html .= '<div style="margin-top: 10px; margin-bottom: 10px;">'.
-              'Page '. $page . ' of ' . $total_pages . ' completed...'.
-            '</div>';
+        'Page '. $page . ' of ' . $total_pages . ' completed...'.
+        '</div>';
 
     // TODO fill this out
     $data = array(
@@ -1315,7 +1307,7 @@ function process_events($page = 0, $type = 'manual') {
 
 function update_events_status() {
     global $wpdb;
-    
+
     // Grabbing all the current events
     $existing_events_ids = get_all_current_events();
     // Make it as array of wp IDs
@@ -1330,7 +1322,7 @@ function update_events_status() {
     if ( ! is_array( $processed_events_ids ) || empty( $processed_events_ids ) ) {
         return;
     }
-    
+
     $non_relevant_events = array_diff( $existing_events_ids, $processed_events_ids );
 
     $new_status = 'draft';
@@ -1439,14 +1431,14 @@ function process_listings($listings, $existing_listing_ids, $existing_companies)
 
 // Maybe this could be used later for avoiding weird characters
 function xml_entity_decode($s) {
-  // illustrating how a (hypothetical) PHP-build-in-function MUST work
+    // illustrating how a (hypothetical) PHP-build-in-function MUST work
     static $XENTITIES = array('&amp;','&gt;','&lt;');
     static $XSAFENTITIES = array('#_x_amp#;','#_x_gt#;','#_x_lt#;');
     $s = str_replace($XENTITIES,$XSAFENTITIES,$s); 
     $s = html_entity_decode($s, ENT_HTML5|ENT_NOQUOTES, 'UTF-8'); // PHP 5.3+
     $s = str_replace($XSAFENTITIES,$XENTITIES,$s);
     return $s;
- }
+}
 
 function manageCategory($categoryData = [], $categorySlug = 'category') {
     $categoryId = $categoryData['id'] ? (int)$categoryData['id'] : null;
@@ -1475,8 +1467,8 @@ function manageCategory($categoryData = [], $categorySlug = 'category') {
         $parentCategory = get_term($categoryParentId, $categorySlug);
 
         if (is_wp_error($parentCategory) || ! $parentCategory || $parentCategory->name === esc_html(
-                $categoryName
-            )) {
+            $categoryName
+        )) {
             return null;
         }
 
@@ -1504,3 +1496,5 @@ function addNewCategory($id, $name, $parent = null) {
 
     return (int) $categoryId;
 }
+
+/* vim: set ts=4 sw=4 sts=4 et : */

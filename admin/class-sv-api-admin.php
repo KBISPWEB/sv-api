@@ -25,405 +25,1015 @@ class SV_Api_Admin {
     const COUPONS_PAGE_LIMIT = 5;
     const COUPONS_IMPORT_CRON_HOOK = 'run_coupons_import_by_page';
 
-	/**
-	 * The ID of this plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 * @var      string    $plugin_name    The ID of this plugin.
-	 */
-	private $plugin_name;
+    /**
+     * The ID of this plugin.
+     *
+     * @since    1.0.0
+     * @access   private
+     * @var      string    $plugin_name    The ID of this plugin.
+     */
+    private $plugin_name;
 
-	/**
-	 * The version of this plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 * @var      string    $version    The current version of this plugin.
-	 */
-	private $version;
+    /**
+     * The version of this plugin.
+     *
+     * @since    1.0.0
+     * @access   private
+     * @var      string    $version    The current version of this plugin.
+     */
+    private $version;
 
-	/**
-	 * Initialize the class and set its properties.
-	 *
-	 * @since    1.0.0
-	 * @param      string    $plugin_name       The name of this plugin.
-	 * @param      string    $version    The version of this plugin.
-	 */
-	public function __construct( $plugin_name, $version ) {
+    /**
+     * Initialize the class and set its properties.
+     *
+     * @since    1.0.0
+     * @param      string    $plugin_name       The name of this plugin.
+     * @param      string    $version    The version of this plugin.
+     */
+    public function __construct( $plugin_name, $version ) {
 
-		$this->plugin_name = $plugin_name;
-		$this->version = $version;
+        $this->plugin_name = $plugin_name;
+        $this->version = $version;
 
-		$this->load_dependencies();
+        $this->load_dependencies();
 
-	}
+    }
 
-	/**
-	* Load the required dependencies for the Admin facing functionality.
-	*
-	* Include the following files that make up the plugin:
-	*
-	* @since    1.0.0
-	* @access   private
-	*/
-	private function load_dependencies() {
+    /**
+     * Load the required dependencies for the Admin facing functionality.
+     *
+     * Include the following files that make up the plugin:
+     *
+     * @since    1.0.0
+     * @access   private
+     */
+    private function load_dependencies() {
 
-		/**
-		 * The class responsible for orchestrating the actions and filters of the
-		 * core plugin.
-		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) .  'admin/class-sv-api-settings.php';
+        /**
+         * The class responsible for orchestrating the actions and filters of the
+         * core plugin.
+         */
+        require_once plugin_dir_path( dirname( __FILE__ ) ) .  'admin/class-sv-api-settings.php';
 
-	}
+    }
 
-	/**
-	 * Register the stylesheets for the admin area.
-	 *
-	 * @since    1.0.0
-	 */
-	public function enqueue_styles() {
+    /**
+     * Register the stylesheets for the admin area.
+     *
+     * @since    1.0.0
+     */
+    public function enqueue_styles() {
 
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in SV_Api_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The SV_Api_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
+        /**
+         * This function is provided for demonstration purposes only.
+         *
+         * An instance of this class should be passed to the run() function
+         * defined in SV_Api_Loader as all of the hooks are defined
+         * in that particular class.
+         *
+         * The SV_Api_Loader will then create the relationship
+         * between the defined hooks and the functions defined in this
+         * class.
+         */
 
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/sv-api-admin.css', array(), $this->version, 'all' );
+        wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/sv-api-admin.css', array(), $this->version, 'all' );
 
-	}
+    }
 
-	/**
-	 * Register the JavaScript for the admin area.
-	 *
-	 * @since    1.0.0
-	 */
-	public function enqueue_scripts() {
+    /**
+     * Register the JavaScript for the admin area.
+     *
+     * @since    1.0.0
+     */
+    public function enqueue_scripts() {
 
-		/**
-		 * This function is provided for demonstration purposes only.
-		 *
-		 * An instance of this class should be passed to the run() function
-		 * defined in SV_Api_Loader as all of the hooks are defined
-		 * in that particular class.
-		 *
-		 * The SV_Api_Loader will then create the relationship
-		 * between the defined hooks and the functions defined in this
-		 * class.
-		 */
+        /**
+         * This function is provided for demonstration purposes only.
+         *
+         * An instance of this class should be passed to the run() function
+         * defined in SV_Api_Loader as all of the hooks are defined
+         * in that particular class.
+         *
+         * The SV_Api_Loader will then create the relationship
+         * between the defined hooks and the functions defined in this
+         * class.
+         */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/sv-api-admin.js', array( 'jquery' ), $this->version, false );
-		wp_localize_script( $this->plugin_name, 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
+        wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/sv-api-admin.js', array( 'jquery' ), $this->version, false );
+        wp_localize_script( $this->plugin_name, 'ajax_object', array( 'ajax_url' => admin_url( 'admin-ajax.php' ) ) );
 
-	}
+    }
 
-	/**
-	 * Add an options page under the Settings submenu
-	 *
-	 * @since  1.0.0
-	 */
-	public function add_management_page() {
+    /**
+     * Add an options page under the Settings submenu
+     *
+     * @since  1.0.0
+     */
+    public function add_management_page() {
 
-		$this->plugin_screen_hook_suffix = add_management_page(
-			__( 'SV API', 'sv' ),
-			__( 'SV API', 'sv' ),
-			'manage_options',
-			$this->plugin_name,
-			array( $this, 'display_options_page' )
-		);
+        $this->plugin_screen_hook_suffix = add_management_page(
+            __( 'SV API', 'sv' ),
+            __( 'SV API', 'sv' ),
+            'manage_options',
+            $this->plugin_name,
+            array( $this, 'display_options_page' )
+        );
 
-	}
+    }
 
-	/**
-	 * Render the options page for plugin
-	 *
-	 * @since  1.0.0
-	 */
-	public function display_options_page() {
-		include_once 'partials/sv-api-admin-display.php';
-	}
+    /**
+     * Render the options page for plugin
+     *
+     * @since  1.0.0
+     */
+    public function display_options_page() {
+        include_once 'partials/sv-api-admin-display.php';
+    }
 
-	/**
-	 * Adds Custom Post Types
-	 * TODO: Allow some user control over what post types are created
-	 * @since  1.0.0
-	 */
-	public function add_cpts() {
-		register_post_type(
-			'listings',
-			array(
-			  	'labels' => array(
-					'name'                       => _x( 'Listings', 'taxonomy general name', 'textdomain' ),
-					'singular_name'              => _x( 'Listing', 'taxonomy singular name', 'textdomain' ),
-					'search_items'               => __( 'Search Listings', 'textdomain' ),
-					'popular_items'              => __( 'Popular Listings', 'textdomain' ),
-					'all_items'                  => __( 'All Listings', 'textdomain' ),
-					'parent_item'                => null,
-					'parent_item_colon'          => null,
-					'edit_item'                  => __( 'Edit Listings', 'textdomain' ),
-					'update_item'                => __( 'Update Listings', 'textdomain' ),
-					'add_new_item'               => __( 'Add New Listings', 'textdomain' ),
-					'new_item_name'              => __( 'New Listings Name', 'textdomain' ),
-					'separate_items_with_commas' => __( 'Separate Listings with commas', 'textdomain' ),
-					'add_or_remove_items'        => __( 'Add or remove Listings', 'textdomain' ),
-					'choose_from_most_used'      => __( 'Choose from the most used Listings', 'textdomain' ),
-					'not_found'                  => __( 'No Listings found.', 'textdomain' ),
-					'menu_name'                  => __( 'Listings', 'textdomain' ),
-			  	),
-				'public' => true,
-				'has_archive' => true,
-				'hierarchical' => true,
-				'taxonomies' => array('post_tag', 'category'),
-				'menu_icon' => 'dashicons-admin-site-alt3',
-				'supports' => array('revisions','editor','title','excerpt','thumbnail'),
-				'rewrite' => array( 'slug' => 'listings', 'with_front'=> true )
-			)
-		);
-	}
+    /**
+     * Adds Custom Post Types
+     * TODO: Allow some user control over what post types are created
+     * @since  1.0.0
+     */
+    public function add_cpts() {
+        register_post_type(
+            'listings',
+            array(
+                'labels' => array(
+                    'name'                       => _x( 'Listings', 'taxonomy general name', 'textdomain' ),
+                    'singular_name'              => _x( 'Listing', 'taxonomy singular name', 'textdomain' ),
+                    'search_items'               => __( 'Search Listings', 'textdomain' ),
+                    'popular_items'              => __( 'Popular Listings', 'textdomain' ),
+                    'all_items'                  => __( 'All Listings', 'textdomain' ),
+                    'parent_item'                => null,
+                    'parent_item_colon'          => null,
+                    'edit_item'                  => __( 'Edit Listings', 'textdomain' ),
+                    'update_item'                => __( 'Update Listings', 'textdomain' ),
+                    'add_new_item'               => __( 'Add New Listings', 'textdomain' ),
+                    'new_item_name'              => __( 'New Listings Name', 'textdomain' ),
+                    'separate_items_with_commas' => __( 'Separate Listings with commas', 'textdomain' ),
+                    'add_or_remove_items'        => __( 'Add or remove Listings', 'textdomain' ),
+                    'choose_from_most_used'      => __( 'Choose from the most used Listings', 'textdomain' ),
+                    'not_found'                  => __( 'No Listings found.', 'textdomain' ),
+                    'menu_name'                  => __( 'Listings', 'textdomain' ),
+                ),
+                'public' => true,
+                'has_archive' => true,
+                'hierarchical' => true,
+                'taxonomies' => array('post_tag', 'category'),
+                'menu_icon' => 'dashicons-admin-site-alt3',
+                'supports' => array('revisions','editor','title','excerpt','thumbnail'),
+                'rewrite' => array( 'slug' => 'listings', 'with_front'=> true )
+            )
+        );
+    }
 
-	/**
-	 * Adds ACF fields for Listings
-	 *
-	 * @since  1.0.0
-	 */
-	public function add_acf_fields() {
-		if( function_exists('acf_add_local_field_group') ):
+    /**
+     * Adds ACF fields for Listings
+     *
+     * @since  1.0.0
+     */
+    public function add_acf_fields() {
+        if( function_exists('acf_add_local_field_group') ):
 
-		// Listing ACF
-		acf_add_local_field_group(array (
-			'key' => 'group_5e84d585970a8',
-			'title' => 'Listing Fields',
-			'fields' => array (
-				array(
-					'key' => 'field_5e84f3dcb0f74',
-					'label' => '<span class="dashicons dashicons-list-view"></span> Listing Info',
-					'name' => '',
-					'type' => 'tab',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array(
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'HunchSchemaProperty' => '',
-					'placement' => 'left',
-					'endpoint' => 0,
-				),
-				array (
-					'key' => 'field_5e4d981e4c406',
-					'label' => 'Listing ID',
-					'name' => 'listing_id',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4d991ce405e',
-					'label' => 'Company',
-					'name' => 'company',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4d9d5b3e5a9',
-					'label' => 'Sort Company',
-					'name' => 'sort_company',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array(
-					'key' => 'field_5e7112c695fff',
-					'label' => 'Featured',
-					'name' => 'featured',
-					'type' => 'true_false',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'message' => '',
-					'default_value' => 0,
-					'ui' => 1,
-					'ui_on_text' => 'Yes',
-					'ui_off_text' => 'No',
-				),
-				array(
-					'key' => 'field_5e84d3eec1149',
-					'label' => '<span class="dashicons dashicons-id-alt"></span> Contact Info',
-					'name' => '',
-					'type' => 'tab',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array(
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'HunchSchemaProperty' => '',
-					'placement' => 'left',
-					'endpoint' => 0,
-				),
-				array (
-					'key' => 'field_5e4d995a27f47',
-					'label' => 'Address',
-					'name' => 'address',
-					'type' => 'textarea',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'placeholder' => '',
-					'maxlength' => '',
-					'rows' => 8,
-					'new_lines' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4d98f276a60',
-					'label' => 'Contact',
-					'name' => 'contact',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4d9e643c28e',
-					'label' => 'Email',
-					'name' => 'email',
-					'type' => 'email',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-				),
-				array (
-					'key' => 'field_5e4d9f4c5adb5',
-					'label' => 'Website',
-					'name' => 'website',
-					'type' => 'url',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'placeholder' => '',
-				),
-				array (
-					'key' => 'field_5e4d9cd9dff8d',
-					'label' => 'Phone',
-					'name' => 'phone',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
+            // Listing ACF
+            acf_add_local_field_group(array (
+                'key' => 'group_5e84d585970a8',
+                'title' => 'Listing Fields',
+                'fields' => array (
+                    array(
+                        'key' => 'field_5e84f3dcb0f74',
+                        'label' => '<span class="dashicons dashicons-list-view"></span> Listing Info',
+                        'name' => '',
+                        'type' => 'tab',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array(
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'HunchSchemaProperty' => '',
+                        'placement' => 'left',
+                        'endpoint' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d981e4c406',
+                        'label' => 'Listing ID',
+                        'name' => 'listing_id',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d991ce405e',
+                        'label' => 'Company',
+                        'name' => 'company',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d9d5b3e5a9',
+                        'label' => 'Sort Company',
+                        'name' => 'sort_company',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array(
+                        'key' => 'field_5e7112c695fff',
+                        'label' => 'Featured',
+                        'name' => 'featured',
+                        'type' => 'true_false',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'message' => '',
+                        'default_value' => 0,
+                        'ui' => 1,
+                        'ui_on_text' => 'Yes',
+                        'ui_off_text' => 'No',
+                    ),
+                    array(
+                        'key' => 'field_5e84d3eec1149',
+                        'label' => '<span class="dashicons dashicons-id-alt"></span> Contact Info',
+                        'name' => '',
+                        'type' => 'tab',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array(
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'HunchSchemaProperty' => '',
+                        'placement' => 'left',
+                        'endpoint' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d995a27f47',
+                        'label' => 'Address',
+                        'name' => 'address',
+                        'type' => 'textarea',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'placeholder' => '',
+                        'maxlength' => '',
+                        'rows' => 8,
+                        'new_lines' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d98f276a60',
+                        'label' => 'Contact',
+                        'name' => 'contact',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d9e643c28e',
+                        'label' => 'Email',
+                        'name' => 'email',
+                        'type' => 'email',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                    ),
+                    array (
+                        'key' => 'field_5e4d9f4c5adb5',
+                        'label' => 'Website',
+                        'name' => 'website',
+                        'type' => 'url',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'placeholder' => '',
+                    ),
+                    array (
+                        'key' => 'field_5e4d9cd9dff8d',
+                        'label' => 'Phone',
+                        'name' => 'phone',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array(
+                        'key' => 'field_631efd9c183af',
+                        'label' => 'Menu',
+                        'name' => 'rwmenu',
+                        'type' => 'url',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array(
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                    ),
+                    array (
+                        'key' => 'field_5e4d9d0115e53',
+                        'label' => 'Tollfree',
+                        'name' => 'tollfree',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d9f9c91a47',
+                        'label' => 'Alternate',
+                        'name' => 'alternate',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d9fbff3169',
+                        'label' => 'Fax',
+                        'name' => 'fax',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4da1eb56fad',
+                        'label' => 'Region',
+                        'name' => 'region',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4da0a8d01d3',
+                        'label' => 'Map Coordinates',
+                        'name' => 'map_coordinates',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array(
+                        'key' => 'field_5e84fe9712700',
+                        'label' => '<span class="dashicons dashicons-welcome-widgets-menus"></span> Details',
+                        'name' => '',
+                        'type' => 'tab',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array(
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'HunchSchemaProperty' => '',
+                        'placement' => 'left',
+                        'endpoint' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4da2ca0d1c7',
+                        'label' => 'Hours',
+                        'name' => 'hours',
+                        'type' => 'wysiwyg',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'placeholder' => '',
+                        'maxlength' => '',
+                        'rows' => 8,
+                        'new_lines' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4da2d73f529',
+                        'label' => 'Ticket information',
+                        'name' => 'ticket_information',
+                        'type' => 'wysiwyg',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'placeholder' => '',
+                        'maxlength' => '',
+                        'rows' => 8,
+                        'new_lines' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4da3147f4ae',
+                        'label' => 'Ticket link',
+                        'name' => 'ticket_link',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4da3b40b08a',
+                        'label' => 'Admissions & Info',
+                        'name' => 'admissions_info',
+                        'type' => 'wysiwyg',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'tabs' => 'all',
+                        'toolbar' => 'full',
+                        'media_upload' => 1,
+                    ),
+                    array (
+                        'key' => 'field_5e4da4886e8a5',
+                        'label' => 'What It\'s Like',
+                        'name' => 'what_its_like',
+                        'type' => 'wysiwyg',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'tabs' => 'all',
+                        'toolbar' => 'full',
+                        'media_upload' => 1,
+                    ),
+                    array (
+                        'key' => 'field_5e4da4b54906f',
+                        'label' => 'Don\'t Miss',
+                        'name' => 'dont_miss',
+                        'type' => 'wysiwyg',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'tabs' => 'all',
+                        'toolbar' => 'full',
+                        'media_upload' => 1,
+                    ),
+                    array (
+                        'key' => 'field_542da4c14093c',
+                        'label' => 'Quote',
+                        'name' => 'quote_block',
+                        'type' => 'textarea',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'tabs' => 'all',
+                        'toolbar' => 'full',
+                        'media_upload' => 1,
+                    ),
+                    array(
+                        'key' => 'field_5e84fe2e68fff',
+                        'label' => '<span class="dashicons dashicons-format-gallery"></span> Images',
+                        'name' => '',
+                        'type' => 'tab',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array(
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'HunchSchemaProperty' => '',
+                        'placement' => 'left',
+                        'endpoint' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4da1b90d60f',
+                        'label' => 'Images',
+                        'name' => 'media',
+                        'type' => 'gallery',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'min' => 0,
+                        'max' => 0,
+                        'preview_size' => 'thumbnail',
+                        'library' => 'all',
+                        'min_width' => 0,
+                        'min_height' => 0,
+                        'min_size' => 0,
+                        'max_width' => 0,
+                        'max_height' => 0,
+                        'max_size' => 0,
+                        'mime_types' => '.gif, .jpg, .png',
+                    ),
+                    array(
+                        'key' => 'field_5e84f917594c9',
+                        'label' => '<span class="dashicons dashicons-share"></span> Social Media',
+                        'name' => '',
+                        'type' => 'tab',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array(
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'HunchSchemaProperty' => '',
+                        'placement' => 'left',
+                        'endpoint' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4da42cbaffb',
+                        'label' => '<span class="dashicons dashicons-twitter"></span> Twitter',
+                        'name' => 'twitter',
+                        'type' => 'url',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'placeholder' => '',
+                    ),
+                    array (
+                        'key' => 'field_5e4da43376704',
+                        'label' => '<span class="dashicons dashicons-facebook"></span> Facebook',
+                        'name' => 'facebook',
+                        'type' => 'url',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'placeholder' => '',
+                    ),
+                    array (
+                        'key' => 'field_5e4da43a9109c',
+                        'label' => '<span class="dashicons dashicons-instagram"></span> Instagram',
+                        'name' => 'instagram',
+                        'type' => 'url',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'placeholder' => '',
+                    ),
+                    array (
+                        'key' => 'field_5e4da441cf6b4',
+                        'label' => '<span class="dashicons dashicons-video-alt3"></span> Youtube',
+                        'name' => 'youtube',
+                        'type' => 'url',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'placeholder' => '',
+                    ),
+                    array(
+                        'key' => 'field_5e84f27312205',
+                        'label' => '<span class="dashicons dashicons-index-card"></span> Misc',
+                        'name' => '',
+                        'type' => 'tab',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array(
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'HunchSchemaProperty' => '',
+                        'placement' => 'left',
+                        'endpoint' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d9adae5afa',
+                        'label' => 'Rank',
+                        'name' => 'rank',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d98fe0c369',
+                        'label' => 'Search Keywords',
+                        'name' => 'search_keywords',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d9f5989dbe',
+                        'label' => 'WCT ID',
+                        'name' => 'wct_id',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d9dfec92f5',
+                        'label' => 'Notification Email',
+                        'name' => 'notification_email',
+                        'type' => 'email',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                    ),
+                    array (
+                        'key' => 'field_5e4da05160eec',
+                        'label' => 'Notification Interval',
+                        'name' => 'notification_interval',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4da20b181b7',
+                        'label' => 'Type of Member',
+                        'name' => 'type_of_member',
+                        'type' => 'text',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                    array(
+                        'key' => 'field_5e84f27312207',
+                        'label' => '<span class="dashicons dashicons-editor-contract"></span> Amenities',
+                        'name' => '',
+                        'type' => 'tab',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array(
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'HunchSchemaProperty' => '',
+                        'placement' => 'left',
+                        'endpoint' => 0,
+                    ),
+                    array (
+                        'key' => 'field_5e4d981e4c408',
+                        'label' => 'Amenities',
+                        'name' => 'amenities',
+                        'type' => 'wysiwyg',
+                        'prefix' => '',
+                        'instructions' => '',
+                        'required' => 0,
+                        'conditional_logic' => 0,
+                        'wrapper' => array (
+                            'width' => '',
+                            'class' => '',
+                            'id' => '',
+                        ),
+                        'default_value' => '',
+                        'placeholder' => '',
+                        'prepend' => '',
+                        'append' => '',
+                        'maxlength' => '',
+                        'readonly' => 0,
+                        'disabled' => 0,
+                    ),
+                ),
+                'location' => array (
+                    array (
+                        array (
+                            'param' => 'post_type',
+                            'operator' => '==',
+                            'value' => 'listings',
+                        ),
+                    ),
+                ),
+                'menu_order' => 0,
+                'position' => 'acf_after_title',
+                'style' => 'default',
+                'label_placement' => 'top',
+                'instruction_placement' => 'label',
+                'hide_on_screen' => '',
+            ));
+
+        // Events ACF
+        acf_add_local_field_group(array (
+            'key' => 'group_5e7111e22d8b0',
+            'title' => 'Event Fields',
+            'fields' => array (
                 array(
-                    'key' => 'field_631efd9c183af',
-                    'label' => 'Menu',
-                    'name' => 'rwmenu',
-                    'type' => 'url',
+                    'key' => 'field_5e8501be433d2',
+                    'label' => '<span class="dashicons dashicons-calendar-alt"></span> Event Info',
+                    'name' => '',
+                    'type' => 'tab',
                     'instructions' => '',
                     'required' => 0,
                     'conditional_logic' => 0,
@@ -432,1389 +1042,779 @@ class SV_Api_Admin {
                         'class' => '',
                         'id' => '',
                     ),
+                    'HunchSchemaProperty' => '',
+                    'placement' => 'left',
+                    'endpoint' => 0,
+                ),
+                array (
+                    'key' => 'field_5e71120e56c18',
+                    'label' => 'Event ID',
+                    'name' => 'eventid',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
                     'default_value' => '',
                     'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 1,
                 ),
-				array (
-					'key' => 'field_5e4d9d0115e53',
-					'label' => 'Tollfree',
-					'name' => 'tollfree',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4d9f9c91a47',
-					'label' => 'Alternate',
-					'name' => 'alternate',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4d9fbff3169',
-					'label' => 'Fax',
-					'name' => 'fax',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4da1eb56fad',
-					'label' => 'Region',
-					'name' => 'region',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4da0a8d01d3',
-					'label' => 'Map Coordinates',
-					'name' => 'map_coordinates',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array(
-					'key' => 'field_5e84fe9712700',
-					'label' => '<span class="dashicons dashicons-welcome-widgets-menus"></span> Details',
-					'name' => '',
-					'type' => 'tab',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array(
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'HunchSchemaProperty' => '',
-					'placement' => 'left',
-					'endpoint' => 0,
-				),
-				array (
-					'key' => 'field_5e4da2ca0d1c7',
-					'label' => 'Hours',
-					'name' => 'hours',
-					'type' => 'wysiwyg',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'placeholder' => '',
-					'maxlength' => '',
-					'rows' => 8,
-					'new_lines' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4da2d73f529',
-					'label' => 'Ticket information',
-					'name' => 'ticket_information',
-					'type' => 'wysiwyg',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'placeholder' => '',
-					'maxlength' => '',
-					'rows' => 8,
-					'new_lines' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4da3147f4ae',
-					'label' => 'Ticket link',
-					'name' => 'ticket_link',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4da3b40b08a',
-					'label' => 'Admissions & Info',
-					'name' => 'admissions_info',
-					'type' => 'wysiwyg',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'tabs' => 'all',
-          			'toolbar' => 'full',
-          			'media_upload' => 1,
-				),
-				array (
-					'key' => 'field_5e4da4886e8a5',
-					'label' => 'What It\'s Like',
-					'name' => 'what_its_like',
-					'type' => 'wysiwyg',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'tabs' => 'all',
-					'toolbar' => 'full',
-					'media_upload' => 1,
-				),
-				array (
-					'key' => 'field_5e4da4b54906f',
-					'label' => 'Don\'t Miss',
-					'name' => 'dont_miss',
-					'type' => 'wysiwyg',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'tabs' => 'all',
-					'toolbar' => 'full',
-					'media_upload' => 1,
-				),
-				array (
-					'key' => 'field_542da4c14093c',
-					'label' => 'Quote',
-					'name' => 'quote_block',
-					'type' => 'textarea',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'tabs' => 'all',
-					'toolbar' => 'full',
-					'media_upload' => 1,
-				),
-				array(
-					'key' => 'field_5e84fe2e68fff',
-					'label' => '<span class="dashicons dashicons-format-gallery"></span> Images',
-					'name' => '',
-					'type' => 'tab',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array(
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'HunchSchemaProperty' => '',
-					'placement' => 'left',
-					'endpoint' => 0,
-				),
-				array (
-					'key' => 'field_5e4da1b90d60f',
-					'label' => 'Images',
-					'name' => 'media',
-					'type' => 'gallery',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'min' => 0,
-					'max' => 0,
-					'preview_size' => 'thumbnail',
-					'library' => 'all',
-					'min_width' => 0,
-					'min_height' => 0,
-					'min_size' => 0,
-					'max_width' => 0,
-					'max_height' => 0,
-					'max_size' => 0,
-					'mime_types' => '.gif, .jpg, .png',
-				),
-				array(
-					'key' => 'field_5e84f917594c9',
-					'label' => '<span class="dashicons dashicons-share"></span> Social Media',
-					'name' => '',
-					'type' => 'tab',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array(
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'HunchSchemaProperty' => '',
-					'placement' => 'left',
-					'endpoint' => 0,
-				),
-				array (
-					'key' => 'field_5e4da42cbaffb',
-					'label' => '<span class="dashicons dashicons-twitter"></span> Twitter',
-					'name' => 'twitter',
-					'type' => 'url',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'placeholder' => '',
-				),
-				array (
-					'key' => 'field_5e4da43376704',
-					'label' => '<span class="dashicons dashicons-facebook"></span> Facebook',
-					'name' => 'facebook',
-					'type' => 'url',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'placeholder' => '',
-				),
-				array (
-					'key' => 'field_5e4da43a9109c',
-					'label' => '<span class="dashicons dashicons-instagram"></span> Instagram',
-					'name' => 'instagram',
-					'type' => 'url',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'placeholder' => '',
-				),
-				array (
-					'key' => 'field_5e4da441cf6b4',
-					'label' => '<span class="dashicons dashicons-video-alt3"></span> Youtube',
-					'name' => 'youtube',
-					'type' => 'url',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'placeholder' => '',
-				),
-				array(
-					'key' => 'field_5e84f27312205',
-					'label' => '<span class="dashicons dashicons-index-card"></span> Misc',
-					'name' => '',
-					'type' => 'tab',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array(
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'HunchSchemaProperty' => '',
-					'placement' => 'left',
-					'endpoint' => 0,
-				),
-				array (
-					'key' => 'field_5e4d9adae5afa',
-					'label' => 'Rank',
-					'name' => 'rank',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4d98fe0c369',
-					'label' => 'Search Keywords',
-					'name' => 'search_keywords',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4d9f5989dbe',
-					'label' => 'WCT ID',
-					'name' => 'wct_id',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4d9dfec92f5',
-					'label' => 'Notification Email',
-					'name' => 'notification_email',
-					'type' => 'email',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-				),
-				array (
-					'key' => 'field_5e4da05160eec',
-					'label' => 'Notification Interval',
-					'name' => 'notification_interval',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array (
-					'key' => 'field_5e4da20b181b7',
-					'label' => 'Type of Member',
-					'name' => 'type_of_member',
-					'type' => 'text',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-				array(
-					'key' => 'field_5e84f27312207',
-					'label' => '<span class="dashicons dashicons-editor-contract"></span> Amenities',
-					'name' => '',
-					'type' => 'tab',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array(
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'HunchSchemaProperty' => '',
-					'placement' => 'left',
-					'endpoint' => 0,
-				),
-				array (
-					'key' => 'field_5e4d981e4c408',
-					'label' => 'Amenities',
-					'name' => 'amenities',
-					'type' => 'wysiwyg',
-					'prefix' => '',
-					'instructions' => '',
-					'required' => 0,
-					'conditional_logic' => 0,
-					'wrapper' => array (
-						'width' => '',
-						'class' => '',
-						'id' => '',
-					),
-					'default_value' => '',
-					'placeholder' => '',
-					'prepend' => '',
-					'append' => '',
-					'maxlength' => '',
-					'readonly' => 0,
-					'disabled' => 0,
-				),
-			),
-			'location' => array (
-				array (
-					array (
-						'param' => 'post_type',
-						'operator' => '==',
-						'value' => 'listings',
-					),
-				),
-			),
-			'menu_order' => 0,
-			'position' => 'acf_after_title',
-			'style' => 'default',
-			'label_placement' => 'top',
-			'instruction_placement' => 'label',
-			'hide_on_screen' => '',
-		));
+                array (
+                    'key' => 'field_5e711217e245f',
+                    'label' => 'Event Type',
+                    'name' => 'eventtype',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array (
+                    'key' => 'field_5e7112217f24f',
+                    'label' => 'Start Date',
+                    'name' => 'startdate',
+                    'type' => 'date_picker',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'HunchSchemaProperty' => '',
+                    'display_format' => 'F j, Y',
+                    'return_format' => 'F j, Y',
+                    'first_day' => 1,
+                ),
+                array (
+                    'key' => 'field_5e71122babe6e',
+                    'label' => 'End Date',
+                    'name' => 'enddate',
+                    'type' => 'date_picker',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'HunchSchemaProperty' => '',
+                    'display_format' => 'F j, Y',
+                    'return_format' => 'F j, Y',
+                    'first_day' => 1,
+                ),
+                array (
+                    'key' => 'field_5e7113da8d256',
+                    'label' => 'Event Dates',
+                    'name' => 'eventdates',
+                    'type' => 'textarea',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'placeholder' => '',
+                    'maxlength' => '',
+                    'rows' => 8,
+                    'new_lines' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array (
+                    'key' => 'field_5e711241c8cb2',
+                    'label' => 'Recurrence',
+                    'name' => 'recurrence',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array (
+                    'key' => 'field_5e7113c3534cb',
+                    'label' => 'Start Time',
+                    'name' => 'starttime',
+                    'type' => 'time_picker',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array (
+                    'key' => 'field_5e7113ca4da80',
+                    'label' => 'End Time',
+                    'name' => 'endtime',
+                    'type' => 'time_picker',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'HunchSchemaProperty' => '',
+                    'display_format' => 'g:i a',
+                    'return_format' => 'g:i a',
+                ),
+                array (
+                    'key' => 'field_5e71124996b6e',
+                    'label' => 'Times',
+                    'name' => 'times',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'HunchSchemaProperty' => '',
+                    'display_format' => 'g:i a',
+                    'return_format' => 'g:i a',
+                ),
+                array (
+                    'key' => 'field_5e71125583fad',
+                    'label' => 'Location',
+                    'name' => 'location',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array (
+                    'key' => 'field_5e711267b2f0b',
+                    'label' => '<span class="dashicons dashicons-tickets-alt"></span> Admission',
+                    'name' => 'admission',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array(
+                    'key' => 'field_5e850201768f7',
+                    'label' => '<span class="dashicons dashicons-id-alt"></span> Contact Info',
+                    'name' => '',
+                    'type' => 'tab',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array(
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'HunchSchemaProperty' => '',
+                    'placement' => 'left',
+                    'endpoint' => 0,
+                ),
+                array (
+                    'key' => 'field_5e71139a916da',
+                    'label' => 'Contact',
+                    'name' => 'contact',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array (
+                    'key' => 'field_5e7113a7d34ea',
+                    'label' => 'Email',
+                    'name' => 'email',
+                    'type' => 'email',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                ),
+                array (
+                    'key' => 'field_5e971eb9d37ed',
+                    'label' => 'Website',
+                    'name' => 'website',
+                    'type' => 'url',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'placeholder' => '',
+                ),
+                array (
+                    'key' => 'field_5e7112773cf57',
+                    'label' => 'Address',
+                    'name' => 'address',
+                    'type' => 'textarea',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'placeholder' => '',
+                    'maxlength' => '',
+                    'rows' => 8,
+                    'new_lines' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array (
+                    'key' => 'field_5e7112834bfd8',
+                    'label' => 'City',
+                    'name' => 'city',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array (
+                    'key' => 'field_5e71128bd82fb',
+                    'label' => 'State',
+                    'name' => 'state',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array (
+                    'key' => 'field_5e7112a8b9130',
+                    'label' => 'Zip',
+                    'name' => 'zip',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array (
+                    'key' => 'field_5e7112b4069dc',
+                    'label' => 'Event Region',
+                    'name' => 'eventregion',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array (
+                    'key' => 'field_5e7112bbbf7aa',
+                    'label' => 'Map Coordinates',
+                    'name' => 'map_coordinates',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array(
+                    'key' => 'field_5e8504b277374',
+                    'label' => '<span class="dashicons dashicons-format-gallery"></span> Images',
+                    'name' => '',
+                    'type' => 'tab',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array(
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'HunchSchemaProperty' => '',
+                    'placement' => 'left',
+                    'endpoint' => 0,
+                ),
+                array (
+                    'key' => 'field_5e7113ec7404d',
+                    'label' => 'Images',
+                    'name' => 'media',
+                    'type' => 'gallery',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'min' => 0,
+                    'max' => 0,
+                    'preview_size' => 'thumbnail',
+                    'library' => 'all',
+                    'min_width' => 0,
+                    'min_height' => 0,
+                    'min_size' => 0,
+                    'max_width' => 0,
+                    'max_height' => 0,
+                    'max_size' => 0,
+                    'mime_types' => '.gif, .jpg, .png',
+                ),
+                array(
+                    'key' => 'field_5e850201768f0',
+                    'label' => '<span class="dashicons dashicons-index-card"></span> Misc',
+                    'name' => '',
+                    'type' => 'tab',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array(
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'HunchSchemaProperty' => '',
+                    'placement' => 'left',
+                    'endpoint' => 0,
+                ),
+                array(
+                    'key' => 'field_5e7112c695bbb',
+                    'label' => 'Featured',
+                    'name' => 'featured',
+                    'type' => 'true_false',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'message' => '',
+                    'default_value' => 0,
+                    'ui' => 1,
+                    'ui_on_text' => 'Yes',
+                    'ui_off_text' => 'No',
+                ),
+                array (
+                    'key' => 'field_5e7112ce6feb9',
+                    'label' => 'Listing ID',
+                    'name' => 'listingid',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 1,
+                ),
+                array (
+                    'key' => 'field_5e711387e6659',
+                    'label' => 'Created',
+                    'name' => 'created',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 1,
+                ),
+                array (
+                    'key' => 'field_5e711392c3a52',
+                    'label' => 'Last Updated',
+                    'name' => 'lastupdated',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 1,
+                ),
+                array (
+                    'key' => 'field_5e7113b051c50',
+                    'label' => 'Host Listing ID',
+                    'name' => 'hostlistingid',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 1,
+                ),
+                array (
+                    'key' => 'field_5e7113b76c55e',
+                    'label' => 'Host Name',
+                    'name' => 'hostname',
+                    'type' => 'text',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'default_value' => '',
+                    'placeholder' => '',
+                    'prepend' => '',
+                    'append' => '',
+                    'maxlength' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+                array(
+                    'key'=> 'field_5e7113d374e6f',
+                    'label'=> 'Never Expire?',
+                    'name'=> 'neverexpire',
+                    'type'=> 'true_false',
+                    'instructions'=> '',
+                    'required'=> 0,
+                    'conditional_logic'=> 0,
+                    'wrapper'=> array (
+                        'width'=> '',
+                        'class'=> '',
+                        'id'=> '',
+                    ),
+                    'message'=> '',
+                    'default_value'=> 0,
+                    'ui'=> 1,
+                    'ui_on_text'=> 'Yes',
+                    'ui_off_text'=> 'No',
+                ),
+                array (
+                    'key' => 'field_5e7113e5776e6',
+                    'label' => 'Custom Fields',
+                    'name' => 'customfields',
+                    'type' => 'textarea',
+                    'prefix' => '',
+                    'instructions' => '',
+                    'required' => 0,
+                    'conditional_logic' => 0,
+                    'wrapper' => array (
+                        'width' => '',
+                        'class' => '',
+                        'id' => '',
+                    ),
+                    'placeholder' => '',
+                    'maxlength' => '',
+                    'rows' => 8,
+                    'new_lines' => '',
+                    'readonly' => 0,
+                    'disabled' => 0,
+                ),
+            ),
+            'location' => array (
+                array (
+                    array (
+                        'param' => 'post_type',
+                        'operator' => '==',
+                        'value' => 'events',
+                    ),
+                ),
+            ),
+            'menu_order' => 1,
+            'position' => 'acf_after_title',
+            'style' => 'default',
+            'label_placement' => 'top',
+            'instruction_placement' => 'label',
+            'hide_on_screen' => '',
+        ));
+endif;
+    } // add_acf_fields
 
-		// Events ACF
-		acf_add_local_field_group(array (
-			'key' => 'group_5e7111e22d8b0',
-			'title' => 'Event Fields',
-			'fields' => array (
-					array(
-						'key' => 'field_5e8501be433d2',
-						'label' => '<span class="dashicons dashicons-calendar-alt"></span> Event Info',
-						'name' => '',
-						'type' => 'tab',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array(
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'HunchSchemaProperty' => '',
-						'placement' => 'left',
-						'endpoint' => 0,
-					),
-					array (
-						'key' => 'field_5e71120e56c18',
-						'label' => 'Event ID',
-						'name' => 'eventid',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 1,
-					),
-					array (
-						'key' => 'field_5e711217e245f',
-						'label' => 'Event Type',
-						'name' => 'eventtype',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array (
-						'key' => 'field_5e7112217f24f',
-						'label' => 'Start Date',
-						'name' => 'startdate',
-						'type' => 'date_picker',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'HunchSchemaProperty' => '',
-						'display_format' => 'F j, Y',
-						'return_format' => 'F j, Y',
-						'first_day' => 1,
-					),
-					array (
-						'key' => 'field_5e71122babe6e',
-						'label' => 'End Date',
-						'name' => 'enddate',
-						'type' => 'date_picker',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'HunchSchemaProperty' => '',
-						'display_format' => 'F j, Y',
-						'return_format' => 'F j, Y',
-						'first_day' => 1,
-					),
-					array (
-						'key' => 'field_5e7113da8d256',
-						'label' => 'Event Dates',
-						'name' => 'eventdates',
-						'type' => 'textarea',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'placeholder' => '',
-						'maxlength' => '',
-						'rows' => 8,
-						'new_lines' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array (
-						'key' => 'field_5e711241c8cb2',
-						'label' => 'Recurrence',
-						'name' => 'recurrence',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array (
-						'key' => 'field_5e7113c3534cb',
-						'label' => 'Start Time',
-						'name' => 'starttime',
-						'type' => 'time_picker',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array (
-						'key' => 'field_5e7113ca4da80',
-						'label' => 'End Time',
-						'name' => 'endtime',
-						'type' => 'time_picker',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'HunchSchemaProperty' => '',
-						'display_format' => 'g:i a',
-						'return_format' => 'g:i a',
-					),
-					array (
-						'key' => 'field_5e71124996b6e',
-						'label' => 'Times',
-						'name' => 'times',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'HunchSchemaProperty' => '',
-						'display_format' => 'g:i a',
-						'return_format' => 'g:i a',
-					),
-					array (
-						'key' => 'field_5e71125583fad',
-						'label' => 'Location',
-						'name' => 'location',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array (
-						'key' => 'field_5e711267b2f0b',
-						'label' => '<span class="dashicons dashicons-tickets-alt"></span> Admission',
-						'name' => 'admission',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array(
-						'key' => 'field_5e850201768f7',
-						'label' => '<span class="dashicons dashicons-id-alt"></span> Contact Info',
-						'name' => '',
-						'type' => 'tab',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array(
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'HunchSchemaProperty' => '',
-						'placement' => 'left',
-						'endpoint' => 0,
-					),
-					array (
-						'key' => 'field_5e71139a916da',
-						'label' => 'Contact',
-						'name' => 'contact',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array (
-						'key' => 'field_5e7113a7d34ea',
-						'label' => 'Email',
-						'name' => 'email',
-						'type' => 'email',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-					),
-					array (
-						'key' => 'field_5e971eb9d37ed',
-						'label' => 'Website',
-						'name' => 'website',
-						'type' => 'url',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'placeholder' => '',
-					),
-					array (
-						'key' => 'field_5e7112773cf57',
-						'label' => 'Address',
-						'name' => 'address',
-						'type' => 'textarea',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'placeholder' => '',
-						'maxlength' => '',
-						'rows' => 8,
-						'new_lines' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array (
-						'key' => 'field_5e7112834bfd8',
-						'label' => 'City',
-						'name' => 'city',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array (
-						'key' => 'field_5e71128bd82fb',
-						'label' => 'State',
-						'name' => 'state',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array (
-						'key' => 'field_5e7112a8b9130',
-						'label' => 'Zip',
-						'name' => 'zip',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array (
-						'key' => 'field_5e7112b4069dc',
-						'label' => 'Event Region',
-						'name' => 'eventregion',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array (
-						'key' => 'field_5e7112bbbf7aa',
-						'label' => 'Map Coordinates',
-						'name' => 'map_coordinates',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array(
-						'key' => 'field_5e8504b277374',
-						'label' => '<span class="dashicons dashicons-format-gallery"></span> Images',
-						'name' => '',
-						'type' => 'tab',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array(
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'HunchSchemaProperty' => '',
-						'placement' => 'left',
-						'endpoint' => 0,
-					),
-					array (
-						'key' => 'field_5e7113ec7404d',
-						'label' => 'Images',
-						'name' => 'media',
-						'type' => 'gallery',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'min' => 0,
-						'max' => 0,
-						'preview_size' => 'thumbnail',
-						'library' => 'all',
-						'min_width' => 0,
-						'min_height' => 0,
-						'min_size' => 0,
-						'max_width' => 0,
-						'max_height' => 0,
-						'max_size' => 0,
-						'mime_types' => '.gif, .jpg, .png',
-					),
-					array(
-						'key' => 'field_5e850201768f0',
-						'label' => '<span class="dashicons dashicons-index-card"></span> Misc',
-						'name' => '',
-						'type' => 'tab',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array(
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'HunchSchemaProperty' => '',
-						'placement' => 'left',
-						'endpoint' => 0,
-					),
-					array(
-						'key' => 'field_5e7112c695bbb',
-						'label' => 'Featured',
-						'name' => 'featured',
-						'type' => 'true_false',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'message' => '',
-						'default_value' => 0,
-						'ui' => 1,
-						'ui_on_text' => 'Yes',
-						'ui_off_text' => 'No',
-					),
-					array (
-						'key' => 'field_5e7112ce6feb9',
-						'label' => 'Listing ID',
-						'name' => 'listingid',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 1,
-					),
-					array (
-						'key' => 'field_5e711387e6659',
-						'label' => 'Created',
-						'name' => 'created',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 1,
-					),
-					array (
-						'key' => 'field_5e711392c3a52',
-						'label' => 'Last Updated',
-						'name' => 'lastupdated',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 1,
-					),
-					array (
-						'key' => 'field_5e7113b051c50',
-						'label' => 'Host Listing ID',
-						'name' => 'hostlistingid',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 1,
-					),
-					array (
-						'key' => 'field_5e7113b76c55e',
-						'label' => 'Host Name',
-						'name' => 'hostname',
-						'type' => 'text',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'default_value' => '',
-						'placeholder' => '',
-						'prepend' => '',
-						'append' => '',
-						'maxlength' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-					array(
-						'key'=> 'field_5e7113d374e6f',
-						'label'=> 'Never Expire?',
-						'name'=> 'neverexpire',
-						'type'=> 'true_false',
-						'instructions'=> '',
-						'required'=> 0,
-						'conditional_logic'=> 0,
-						'wrapper'=> array (
-							'width'=> '',
-							'class'=> '',
-							'id'=> '',
-						),
-						'message'=> '',
-						'default_value'=> 0,
-						'ui'=> 1,
-						'ui_on_text'=> 'Yes',
-						'ui_off_text'=> 'No',
-					),
-					array (
-						'key' => 'field_5e7113e5776e6',
-						'label' => 'Custom Fields',
-						'name' => 'customfields',
-						'type' => 'textarea',
-						'prefix' => '',
-						'instructions' => '',
-						'required' => 0,
-						'conditional_logic' => 0,
-						'wrapper' => array (
-							'width' => '',
-							'class' => '',
-							'id' => '',
-						),
-						'placeholder' => '',
-						'maxlength' => '',
-						'rows' => 8,
-						'new_lines' => '',
-						'readonly' => 0,
-						'disabled' => 0,
-					),
-				),
-				'location' => array (
-					array (
-						array (
-							'param' => 'post_type',
-							'operator' => '==',
-							'value' => 'events',
-						),
-					),
-				),
-				'menu_order' => 1,
-				'position' => 'acf_after_title',
-				'style' => 'default',
-				'label_placement' => 'top',
-				'instruction_placement' => 'label',
-				'hide_on_screen' => '',
-			));
-		endif;
-	} // add_acf_fields
+    public function run_bulk_listings_CRON(){
 
-	public function run_bulk_listings_CRON(){
+        update_option( 'sv_api_last_run', date("F j, Y, g:i a") );
+        update_option( 'sv_api_failure_last_run', false );
+        update_option( 'sv_api_method', 'cron' );
+        update_option( 'sv_api_kill_cron', getmypid() );
+        update_option( 'sv_api_listings_processed', 0 );
+        update_option( 'sv_api_listings_updated',  0 );
+        update_option( 'sv_api_listings_errors', 0 );
+        update_option( 'sv_api_listings_added', 0 );
 
-		update_option( 'sv_api_last_run', date("F j, Y, g:i a") );
-		update_option( 'sv_api_failure_last_run', false );
-		update_option( 'sv_api_method', 'cron' );
-		update_option( 'sv_api_kill_cron', getmypid() );
-		update_option( 'sv_api_listings_processed', 0 );
-		update_option( 'sv_api_listings_updated',  0 );
-		update_option( 'sv_api_listings_errors', 0 );
-		update_option( 'sv_api_listings_added', 0 );
+        $results_num 	= sv_api_connection('getListings', 1);
+        $results_count 	= $results_num['REQUESTSTATUS']['RESULTS'];
+        update_option( 'sv_api_results_count', $results_count );
 
-		$results_num 	= sv_api_connection('getListings', 1);
-		$results_count 	= $results_num['REQUESTSTATUS']['RESULTS'];
-		update_option( 'sv_api_results_count', $results_count );
+        $process_count 	= 0;
+        $updated_count 	= 0;
+        $error_count 	= 0;
+        $added_count 	= 0;
+        $kill 			= get_option('sv_api_kill_cron');
 
-		$process_count 	= 0;
-		$updated_count 	= 0;
-		$error_count 	= 0;
-		$added_count 	= 0;
-		$kill 			= get_option('sv_api_kill_cron');
+        $failed 		= false;
+        $api_pagesize 	= 10; // max allowed by Simpleview API is 50
+        $num_calls 		= ceil($results_count / $api_pagesize);
+        $hasMore 		= true;
 
-		$failed 		= false;
-		$api_pagesize 	= 10; // max allowed by Simpleview API is 50
-		$num_calls 		= ceil($results_count / $api_pagesize);
-		$hasMore 		= true;
+        $more_to_do_safeguard = 0;
+        $guard_rail = $num_calls * 1.1;
 
-		$more_to_do_safeguard = 0;
-		$guard_rail = $num_calls * 1.1;
+        date_default_timezone_set('America/New_York');
 
-		date_default_timezone_set('America/New_York');
+        $log_options = get_option( 'sv_api_logs' );
+        [$log_success, $log_folder, $log_file] = createLog($log_options, 'listings', true, $results_count);
 
-		$log_options = get_option( 'sv_api_logs' );
-		[$log_success, $log_folder, $log_file] = createLog($log_options, 'listings', true, $results_count);
+        $existing_listing_ids 	= existing_listing_ids();
+        $existing_companies 	= existing_companies();
 
-		$existing_listing_ids 	= existing_listing_ids();
-		$existing_companies 	= existing_companies();
+        set_time_limit ( 1800 );
 
-		set_time_limit ( 1800 );
+        $page = 0;
+        $starting_index = 1;
 
-		$page = 0;
-		$starting_index = 1;
+        while ( $hasMore && ($more_to_do_safeguard < $guard_rail) ){
 
-		while ( $hasMore && ($more_to_do_safeguard < $guard_rail) ){
+            $page 		= $page + 1;
+            $hasMore 	= $page >= $num_calls ? false : true;
 
-			$page 		= $page + 1;
-			$hasMore 	= $page >= $num_calls ? false : true;
+            $response = sv_api_connection('getListings', $api_pagesize, $page);
+            if( $response == 'error'):
+                $failed = true;
+            addPagedFailMessageToLog($log_file, $page);
+endif;
+$listings = $response['LISTINGS']['LISTING'];
 
-			$response = sv_api_connection('getListings', $api_pagesize, $page);
-			if( $response == 'error'):
-				$failed = true;
-				addPagedFailMessageToLog($log_file, $page);
-			endif;
-			$listings = $response['LISTINGS']['LISTING'];
+[$processed_this_page,
+    $updated_this_page,
+    $errors_this_page,
+    $added_this_page,
+    $this_pages_listings] = process_listings($listings, $existing_listing_ids, $existing_companies);
 
-			[$processed_this_page,
-			$updated_this_page,
-			$errors_this_page,
-			$added_this_page,
-			$this_pages_listings] = process_listings($listings, $existing_listing_ids, $existing_companies);
+$process_count 	+= $processed_this_page;
+$updated_count 	+= $updated_this_page;
+$error_count 	+= $errors_this_page;
+$added_count 	+= $added_this_page;
 
-			$process_count 	+= $processed_this_page;
-			$updated_count 	+= $updated_this_page;
-			$error_count 	+= $errors_this_page;
-			$added_count 	+= $added_this_page;
+addLogData($log_file, $this_pages_listings, $starting_index);
 
-			addLogData($log_file, $this_pages_listings, $starting_index);
+$total = $results_count;
 
-			$total = $results_count;
+if( $failed ):
+    update_option( 'sv_api_failure_last_run', true );
+endif;
 
-			if( $failed ):
-				update_option( 'sv_api_failure_last_run', true );
-			endif;
+$more_to_do_safeguard++;
+$starting_index = $page * $api_pagesize;
 
-			$more_to_do_safeguard++;
-			$starting_index = $page * $api_pagesize;
+        } // while more_to_do
 
-		} // while more_to_do
+        update_option( 'sv_api_listings_processed', $process_count );
+        update_option( 'sv_api_listings_updated', $updated_count );
+        update_option( 'sv_api_listings_errors', $error_count );
+        update_option( 'sv_api_listings_added', $added_count );
 
-		update_option( 'sv_api_listings_processed', $process_count );
-		update_option( 'sv_api_listings_updated', $updated_count );
-		update_option( 'sv_api_listings_errors', $error_count );
-		update_option( 'sv_api_listings_added', $added_count );
+        set_time_limit (30);
+        unset($listings);
+        unset($response);
+        unset($premium_response);
 
-		set_time_limit (30);
-		unset($listings);
-		unset($response);
-		unset($premium_response);
-
-	} //run_bulk_listings
+    } //run_bulk_listings
 
     public function run_bulk_listings() {
         if (!isset($_POST['is_triggered']) || $_POST['is_triggered'] != 'true') {
@@ -1837,7 +1837,7 @@ class SV_Api_Admin {
             update_option('sv_api_listings_ids_processed', []);
 
             $results_num   = sv_api_connection('getListings', 1);
-            $results_count = $results_num['REQUESTSTATUS']['RESULTS'];
+            $results_count = $results_num['REQUESTSTATUS']['RESULTS'] ?? '0';
             update_option('sv_api_results_count', $results_count);
         }
 
@@ -1869,7 +1869,8 @@ class SV_Api_Admin {
         if ($response == 'error') {
             $failed = true;
         }
-        $listings = $response['LISTINGS']['LISTING'];
+
+        $listings = $response['LISTINGS']['LISTING'] ?? [];
 
         [
             $processed_this_page,
@@ -1891,10 +1892,10 @@ class SV_Api_Admin {
 
         // List of listings ids that have already been imported
         $processed_listings_ids = get_option('sv_api_listings_ids_processed', []);
-        $processed_listings_ids = is_array($processed_listings_ids) ? array_merge(
-            $processed_listings_ids,
+        $processed_listings_ids = array_merge(
+            is_array($processed_listings_ids) ? $processed_listings_ids : [],
             array_keys($this_pages_listings)
-        ) : array_keys($this_pages_listings);
+        );
 
         update_option('sv_api_listings_processed', $process_count + $processed_this_page);
         update_option('sv_api_listings_updated', $updated_count + $updated_this_page);
@@ -1905,7 +1906,7 @@ class SV_Api_Admin {
         // TODO: make a function to add this front end data
 
         $total   = $results_count;
-        $percent = round(($page / $num_calls) * 100, 2);
+        $percent = $num_calls ? round(($page / $num_calls) * 100, 2) : 100;
 
         if ($failed) {
             $html .= '<br>Page ' . $page . ' of ' . $num_calls . ' FAILED .... ' . $percent . '%<br>';
@@ -1988,18 +1989,18 @@ class SV_Api_Admin {
         }
     }
 
-	public function run_bulk_events_CRON(){
-		// TODO: Implement cron update
-		// process_events('cron');
-	} //run_bulk_events_CRON
+    public function run_bulk_events_CRON(){
+        // TODO: Implement cron update
+        // process_events('cron');
+    } //run_bulk_events_CRON
 
-	public function run_bulk_events(){
-		$page = intval($_POST['page']);
-		if ( isset($_POST['is_triggered']) && $_POST['is_triggered'] == 'true' ):
-			$data = process_events($page, 'manual');
-			wp_send_json($data);
-		endif;
-	} //run_bulk_events
+    public function run_bulk_events(){
+        $page = intval($_POST['page']);
+        if ( isset($_POST['is_triggered']) && $_POST['is_triggered'] == 'true' ):
+            $data = process_events($page, 'manual');
+            wp_send_json($data);
+        endif;
+    } //run_bulk_events
 
     /**
      * Running the coupons importing process
@@ -2439,45 +2440,47 @@ UPDATES
         die();
     }
 
-	public function create_new_post_from_svid() {
-		$data = (object)[
-			"postFound" => false
-		];
+    public function create_new_post_from_svid() {
+        $data = (object)[
+            "postFound" => false
+        ];
 
-		if ( isset($_POST['svid']) ) {
-			$data->svid = $_POST['svid'];
+        if ( isset($_POST['svid']) ) {
+            $data->svid = $_POST['svid'];
 
-			$SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $data->svid);
+            $SV_API_RESPONSE = sv_api_connection('getListing', 0, 0, $data->svid);
 
-			$create_new_listing_result = create_new_listing($SV_API_RESPONSE);
+            $create_new_listing_result = create_new_listing($SV_API_RESPONSE);
 
-			$data->status = $create_new_listing_result[0];
-			$data->returnMessage = $create_new_listing_result[1];
-			$data->link = $create_new_listing_result[2];
-		}
+            $data->status = $create_new_listing_result[0];
+            $data->returnMessage = $create_new_listing_result[1];
+            $data->link = $create_new_listing_result[2];
+        }
 
-		$encoded_json = json_encode($data);
+        $encoded_json = json_encode($data);
 
-		echo $encoded_json;
+        echo $encoded_json;
 
-		die();
-	}
+        die();
+    }
 
-	public function kill_cron() {
-		// if the cron is in the middle of running, setting this will terminate the job
+    public function kill_cron() {
+        // if the cron is in the middle of running, setting this will terminate the job
 
-		$kill_return = posix_kill ( intval( get_option('sv_api_kill_cron') ) , SIGKILL );
+        $kill_return = posix_kill ( intval( get_option('sv_api_kill_cron') ) , SIGKILL );
 
-		$data = (object)[
-			"cronKilled" => true
-		];
+        $data = (object)[
+            "cronKilled" => true
+        ];
 
-		$encoded_json = json_encode($data);
+        $encoded_json = json_encode($data);
 
-		echo $encoded_json;
+        echo $encoded_json;
 
-		die();
-	}
+        die();
+    }
 }
 
 //testing
+
+/* vim: set ts=4 sw=4 sts=4 et : */
