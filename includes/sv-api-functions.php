@@ -473,7 +473,7 @@ function process_amenities($amenities_response, $tag_to_tab) {
 
         $parent_slug  = reformCategorySlug($tab_name);
         $parent_tax = get_term_by('slug', $parent_slug, 'amenities');
-        $parent_id = $parent_tax->term_id;
+        $parent_id = $parent_tax->term_id ?? 0;
 
         if ( count($tab_amenities) > 0 ) {
             foreach($tab_amenities as $cat_name => $value){
@@ -1345,8 +1345,13 @@ function process_listings($listings, $existing_listing_ids, $existing_companies)
         $last_updated = $listing['LASTUPDATED'];
         $company      = ! empty($listing['COMPANY']) ? $listing['COMPANY'] : false;
         $sort_company = ! empty($listing['SORTCOMPANY']) ? $listing['SORTCOMPANY'] : $svid . ' Company Name Missing';
-        $isFeatured   = (int) $listing['DTN']['RANK'] > 0;
-        $dtnTab       = $listing['DTN'];
+        $isFeatured = 0;
+        $dtnTab = [];
+
+        if (array_key_exists('DTN', $listing) && is_array($listing['DTN'])) {
+            $isFeatured = (int) $listing['DTN']['RANK'] > 0;
+            $dtnTab = $listing['DTN'];
+        }
 
         if ($company) {
             $type_name = $listing['TYPENAME'];
