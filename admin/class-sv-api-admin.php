@@ -2314,7 +2314,7 @@ $starting_index = $page * $api_pagesize;
 
         // Assign to categories
         if (! empty($categories)) {
-            wp_set_object_terms($coupon_id, $categories, 'category');
+            wp_set_object_terms($coupon_id, $categories, 'listings-category');
         }
 
         // Append coupon's image
@@ -2377,7 +2377,7 @@ $starting_index = $page * $api_pagesize;
 
         // Assign to categories
         if (! empty($categories)) {
-            wp_set_object_terms($coupon_id, $categories, 'category');
+            wp_set_object_terms($coupon_id, $categories, 'listings-category');
         }
 
         if (! get_field('overwrite_title', $coupon_id)) {

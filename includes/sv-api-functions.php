@@ -56,7 +56,7 @@ function create_new_listing($response, $isFeatured = null, $dtnTab = []) {
         $combined_post_cats = array_merge($dtnCats, $standard_fields['post_cats']);
 
         // add post terms
-        wp_set_object_terms($pid, $combined_post_cats, 'category');
+        wp_set_object_terms($pid, $combined_post_cats, 'listings-category');
 
         // populate the post meta data
         update_standard_fields($pid, $standard_fields);
@@ -164,7 +164,7 @@ function update_listing($response, $pid, $isFeatured = null, $dtnTab = []) {
         $combined_post_cats = array_unique($combined_post_cats);
 
         // add post terms
-        wp_set_object_terms($pid, $combined_post_cats, 'category');
+        wp_set_object_terms($pid, $combined_post_cats, 'listings-category');
 
         if (strtolower($standard_fields['rank']) === "premium") {
             update_premium_meta($pid, $listing);
@@ -692,7 +692,7 @@ function update_event($event, $pid, $log_file)
 
     $fields = grab_event_fields($event);
     update_event_standard_fields($pid, $fields);
-    wp_set_post_terms($pid, $fields['post_cats'], 'category');
+    wp_set_post_terms($pid, $fields['post_cats'], 'listings-category');
     update_event_imgaes($pid, $event, $title, $log_file);
 
     $post_data = array(
@@ -731,7 +731,7 @@ function create_new_event($event, $log_file)
 
         $fields = grab_event_fields($event);
         update_event_standard_fields($pid, $fields);
-        wp_set_post_terms($pid, $fields['post_cats'], 'category');
+        wp_set_post_terms($pid, $fields['post_cats'], 'listings-category');
         file_put_contents($log_file, "Before Process Images." . PHP_EOL, FILE_APPEND);
         process_event_images($pid, $event, $title, $log_file);
 
