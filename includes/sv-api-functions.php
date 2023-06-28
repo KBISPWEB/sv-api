@@ -1492,8 +1492,15 @@ function manageCategory($categoryData = [], $categorySlug = 'listings-category')
     return $categoryId;
 }
 
-function addNewCategory($id, $name, $parent = null) {
-    $categoryId = wp_create_category($name, (int) $parent);
+function addNewCategory($id, $cat_name, $parent = null, $tax = 'listings-category') {
+    $cat_array = array(
+        'cat_name' => $cat_name,
+        'category_description' => '',
+        # 'category_nicename' => $cat_slug,
+        'category_parent' => (int) $parent,
+        'taxonomy' => $tax,
+    );
+    $categoryId = wp_insert_category($cat_array);
     if (is_wp_error($categoryId)) {
         return null;
     }
