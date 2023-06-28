@@ -1445,7 +1445,7 @@ function xml_entity_decode($s) {
     return $s;
 }
 
-function manageCategory($categoryData = [], $categorySlug = 'category') {
+function manageCategory($categoryData = [], $categorySlug = 'listings-category') {
     $categoryId = $categoryData['id'] ? (int)$categoryData['id'] : null;
     $categoryName = $categoryData['name'] ?? null;
     $categoryParentId = $categoryData['parent'] ?? null;

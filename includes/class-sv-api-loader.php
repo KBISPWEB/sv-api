@@ -193,7 +193,7 @@ class SV_Api_Loader {
             return $get_existing_event_ids->posts;
         } // get_all_current_events
 
-        function addCategory($cat_name, $cat_slug, $parent = '', $tax = 'category')
+        function addCategory($cat_name, $cat_slug, $parent = '', $tax = 'listing-category')
         {
             require_once(ABSPATH . '/wp-admin/includes/taxonomy.php');
             $check_cat_exists = get_term_by('slug', $cat_slug, $tax);

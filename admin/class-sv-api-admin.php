@@ -156,6 +156,35 @@ class SV_Api_Admin {
      * @since  1.0.0
      */
     public function add_cpts() {
+        register_taxonomy(
+            'listings-category',
+            null,
+            array(
+                'labels' => array(
+                    'name'                       => _x( 'Listing Categories', 'taxonomy general name', 'textdomain' ),
+                    'singular_name'              => _x( 'Listing Category', 'taxonomy singular name', 'textdomain' ),
+                    'search_items'               => __( 'Search Listing Categories', 'textdomain' ),
+                    'popular_items'              => __( 'Popular Listing Categories', 'textdomain' ),
+                    'all_items'                  => __( 'All Listing Categories', 'textdomain' ),
+                    'parent_item'                => null,
+                    'parent_item_colon'          => null,
+                    'edit_item'                  => __( 'Edit Listing Categories', 'textdomain' ),
+                    'update_item'                => __( 'Update Listing Categories', 'textdomain' ),
+                    'add_new_item'               => __( 'Add New Listing Categories', 'textdomain' ),
+                    'new_item_name'              => __( 'New Listing Categories Name', 'textdomain' ),
+                    'separate_items_with_commas' => __( 'Separate Listing Categories with commas', 'textdomain' ),
+                    'add_or_remove_items'        => __( 'Add or remove Listing Categories', 'textdomain' ),
+                    'choose_from_most_used'      => __( 'Choose from the most used Listing Categories', 'textdomain' ),
+                    'not_found'                  => __( 'No Listing Categories found.', 'textdomain' ),
+                    'menu_name'                  => __( 'Listing Categories', 'textdomain' ),
+                ),
+                'public' => true,
+                'hierarchical' => true,
+                'rewrite' => array( 'slug' => 'listings-category', 'with_front'=> true )
+            ),
+            true
+        );
+
         register_post_type(
             'listings',
             array(
@@ -180,7 +209,7 @@ class SV_Api_Admin {
                 'public' => true,
                 'has_archive' => true,
                 'hierarchical' => true,
-                'taxonomies' => array('post_tag', 'category'),
+                'taxonomies' => array('post_tag', 'listings-category'),
                 'menu_icon' => 'dashicons-admin-site-alt3',
                 'supports' => array('revisions','editor','title','excerpt','thumbnail'),
                 'rewrite' => array( 'slug' => 'listings', 'with_front'=> true )
