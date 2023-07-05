@@ -156,6 +156,12 @@ class SV_Api_Admin {
      * @since  1.0.0
      */
     public function add_cpts() {
+        $options = get_option( 'sv_api_posts' );
+
+        $slug = 'listings-category';
+        if (isset($options['taxonomy_slug']) && !empty($options['taxonomy_slug']))
+            $slug = $options['taxonomy_slug'];
+
         register_taxonomy(
             'listings-category',
             null,
@@ -180,7 +186,7 @@ class SV_Api_Admin {
                 ),
                 'public' => true,
                 'hierarchical' => true,
-                'rewrite' => array( 'slug' => 'listings-category', 'with_front'=> true )
+                'rewrite' => array( 'slug' => $slug, 'with_front'=> true )
             ),
             true
         );
